@@ -1,12 +1,15 @@
 // this is file of global variables
+
+int mapNum=0;
+
 int getFrameWidth()
 {
-    return (3700);
+    return (1920);
 }
 
 int getFrameHeight()
 {
-    return (2000);
+    return (1080);
 }
 
 int getMaxNumOFplayer()

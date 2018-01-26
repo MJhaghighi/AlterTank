@@ -1,6 +1,8 @@
 // this is functions fils
 #include "sstream"
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 using namespace std;
 
 /*const char* getTankString(int i)
@@ -19,3 +21,11 @@ const char* getMapString(int i)
 	cout << mapString.str()<<"\n";
 	return(mapString.str().c_str());
 } */
+
+int randomMap(int MaxNumOFmap)
+{
+    int p=rand()%MaxNumOFmap;
+    if(p==mapNum) randomMap(MaxNumOFmap);
+    else return p;
+}
+

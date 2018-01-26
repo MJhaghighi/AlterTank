@@ -7,22 +7,21 @@
 using namespace std;
 
 
-
-
 int main(){
 	SDL_Init(SDL_INIT_EVERYTHING);
+	srand((unsigned)time(NULL));
 	// game screen
 	SDL_Surface* SCREEN = NULL;
 	SCREEN=SDL_SetVideoMode(getFrameWidth(),getFrameHeight(),32,SDL_SWSURFACE);
 	//cin >> numberOFplayer;
-	const char* tankAdress[4]={"tank1.png","tank2.png","tank3.png","tank4.png"};
-	const char* mapAdress[4]={"map1.png","map2.png","map3.png","map4.png"};
+	const char* tankAddress[4]={"tank1.png","tank2.png","tank3.png","tank4.png"};
+	const char* mapAddress[4]={"map1.png","map2.png","map3.png","map4.png"};
 
 	//initial tank screen
 	SDL_Surface** tankScreen = new SDL_Surface*[getMaxNumOFplayer()];
 	for (int i=0 ; i<getMaxNumOFplayer() ; i++)
-	{	
-    	tankScreen[i]=IMG_Load(tankAdress[i]);
+	{
+    	tankScreen[i]=IMG_Load(tankAddress[i]);
     	if (!(tankScreen[i]))
     			printf("%s\n",IMG_GetError());
 	}
@@ -31,15 +30,15 @@ int main(){
 	SDL_Surface** mapScreen = new SDL_Surface*[getMaxNumOFmap()];
 	for (int i=0 ; i<getMaxNumOFmap() ; i++)
 	{
-	    mapScreen[i]=IMG_Load(mapAdress[i]); 
+	    mapScreen[i]=IMG_Load(mapAddress[i]);
 	    if (!(mapScreen[i]))
     			printf("%s\n",IMG_GetError());
 	}
 
-	SDL_BlitSurface(mapScreen[0],NULL,SCREEN,NULL);
-	SDL_BlitSurface(tankScreen[2],NULL,SCREEN,NULL);	
+	SDL_BlitSurface(mapScreen[randomMap( getMaxNumOFmap() )],NULL,SCREEN,NULL);
+	SDL_BlitSurface(tankScreen[0],NULL,SCREEN,NULL);
 	SDL_Flip(SCREEN);
-	SDL_Delay( 5000 );
+	SDL_Delay(10000);
 
 
 
@@ -50,12 +49,6 @@ int main(){
 	{
 		//randomlyPicMap
 		//move tank
-
-
-
-
-
-
 
 
 
@@ -75,5 +68,6 @@ int main(){
 	SDL_Delay( 8000 );
 	}
 */
+
 return 0;
 }
