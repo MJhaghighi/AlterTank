@@ -208,7 +208,7 @@ SDL_Surface** mapScreen = new SDL_Surface*[max_numbers_of_map];
 ////////////////////////////////////////////////////////////////////////////////////////////
 int main(){
 	SDL_Init(SDL_INIT_EVERYTHING);
-	int numbers_of_player_in_game=1;
+	int numbers_of_player_in_game=3;
 	int map_number_in_game=1;
 	srand((unsigned)time(NULL));
 	// intital game screen
@@ -376,8 +376,117 @@ void handle_event(Tank *tank,bool *flag_UP,bool *flag_DOWN,int i)
             			}
        				}
     			}
-    //if (i==1)
-    //if (i==2)
+    if (i==1)
+    {
+    	if( event.type == SDL_KEYDOWN )//in ha rokh dad hastand halat nistand
+  				 {
+        //Adjust the velocity
+      				switch( event.key.keysym.sym )
+     				{
+            			case SDLK_w:
+            			{
+            				flag_UP[i]=true;break;
+            			}
+            			     					
+      					case SDLK_s:
+       					{
+      				    	flag_DOWN[i]=true;break;
+      					}
+
+            //for determining angle
+            			case SDLK_a:
+            			{
+            				tank[i].set_omega(1);break;
+            			}
+            			case SDLK_d:
+            			{
+                			tank[i].set_omega(-1);break;
+            			} 
+      				}
+    			}
+    //If a key was released
+    			else if( event.type == SDL_KEYUP )
+    			{
+        //Adjust the velocit
+        			switch( event.key.keysym.sym )
+     			   {
+            			case SDLK_w:
+            			{
+            				flag_UP[i]=false;break;
+            			}
+            			
+            			case SDLK_s:
+            			{	
+            				flag_DOWN[i]=false;break;
+            			}
+            //for determining angle
+            			case SDLK_a:
+            			{
+            				tank[i].set_omega(0);break;
+            			}
+            			case SDLK_d:
+            			{
+            				tank[i].set_omega(0);break;
+            			}
+       				}
+    			}
+
+    }
+    if (i==2)
+    {
+    	if( event.type == SDL_KEYDOWN )//in ha rokh dad hastand halat nistand
+  				 {
+        //Adjust the velocity
+      				switch( event.key.keysym.sym )
+     				{
+            			case SDLK_i:
+            			{
+            				flag_UP[i]=true;break;
+            			}
+            			     					
+      					case SDLK_k:
+       					{
+      				    	flag_DOWN[i]=true;break;
+      					}
+
+            //for determining angle
+            			case SDLK_j:
+            			{
+            				tank[i].set_omega(1);break;
+            			}
+            			case SDLK_l:
+            			{
+                			tank[i].set_omega(-1);break;
+            			} 
+      				}
+    			}
+    //If a key was released
+    			else if( event.type == SDL_KEYUP )
+    			{
+        //Adjust the velocit
+        			switch( event.key.keysym.sym )
+     			   {
+            			case SDLK_i:
+            			{
+            				flag_UP[i]=false;break;
+            			}
+            			
+            			case SDLK_k:
+            			{	
+            				flag_DOWN[i]=false;break;
+            			}
+            //for determining angle
+            			case SDLK_j:
+            			{
+            				tank[i].set_omega(0);break;
+            			}
+            			case SDLK_l:
+            			{
+            				tank[i].set_omega(0);break;
+            			}
+       				}
+    			}
+    }
     //if (i==3)
 		
 
