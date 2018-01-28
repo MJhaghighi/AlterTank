@@ -1,4 +1,5 @@
 // this is functions fils
+
 #include "sstream"
 #include <iostream>
 #include <cstdlib>
@@ -28,4 +29,5 @@ int randomMap(int MaxNumOFmap)
     if(p==mapNum) randomMap(MaxNumOFmap);
     else return p;
 }
+
 
