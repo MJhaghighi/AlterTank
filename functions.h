@@ -1,5 +1,4 @@
 // this is functions fils
-
 #include "sstream"
 #include <iostream>
 #include <cstdlib>
@@ -23,10 +22,10 @@ const char* getMapString(int i)
 	return(mapString.str().c_str());
 } */
 
-int randomMap(int MaxNumOFmap)
+int randomMap(int max_numbers_of_map,int mapNum)
 {
-    int p=rand()%MaxNumOFmap;
-    if(p==mapNum) randomMap(MaxNumOFmap);
+    int p=rand()%max_numbers_of_map;
+    if(p==mapNum) randomMap(max_numbers_of_map,mapNum);
     else return p;
 }
 
