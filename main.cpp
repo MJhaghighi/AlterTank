@@ -3,14 +3,21 @@
 #include <sstream>
 #include <SDL/SDL_gfxPrimitives.h>
 #include "global_variables.h"
-#include "functions.h"
-#include "functions_header.h"
-using namespace std;
-//////////////////////////////////////////////////////////////////////////////
 #include <iostream>
 #include <cmath>
 using namespace std;
 #define PI 3.1415
+
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+//                             classes                                    //
+
+
+
+
+///////////////////////////////////////////////////////////////////////////
 class Tank
 {
 	private:
@@ -43,8 +50,7 @@ class Tank
 		int get_angle();
 		int get_omega();
 		int get_veapon_kind();
-		/////////////////////////////////////////////////////////////////////////////
-		/////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////
 		void move();
 		void turn_around();
 };
@@ -118,8 +124,7 @@ void Tank::set_omega(int i)
 		omega=0;
 	}
 }
-///////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////
 int Tank::get_health()
 {
 	return(health);
@@ -156,8 +161,7 @@ int Tank::get_veapon_kind()
 {
 	return(veapon_kind);
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////
 void Tank::move()
 {
 	Xposition+=get_Xspeed();
@@ -167,7 +171,41 @@ void Tank::turn_around()
 {
 	angle+=get_omega();
 }
-/////////////////////////////////////////////////////////////////////////////
+
+
+
+
+///////////////////////////////////////////////////////////////////////////
+
+//                     function headers                                  //
+
+//////////////////////////////////////////////////////////////////////////
+int randomMap(int max_numbers_of_map,int mapNum);
+void handle_event(Tank*tank,bool *flag_UP,bool *flag_DOWN,int i);
+
+
+////////////////////////////////////////////////////////////////////////////
+
+//                      global variables                                 //
+
+///////////////////////////////////////////////////////////////////////////
+int frame_width=1800;
+int frame_height=900;
+int max_numbers_of_player=4;
+int max_numbers_of_map=4;
+SDL_Event event;
+SDL_Surface* SCREEN = NULL;
+SDL_Surface** tankScreen = new SDL_Surface*[max_numbers_of_player];
+SDL_Surface** mapScreen = new SDL_Surface*[max_numbers_of_map];
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//                                       main                                            //
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
 int main(){
 	SDL_Init(SDL_INIT_EVERYTHING);
 	int numbers_of_player_in_game=1;
@@ -188,6 +226,7 @@ int main(){
 	}
 
 	//initial wall screen
+
 	for (int i=0 ; i<max_numbers_of_map/*4*/; i++)
 	{
 	    mapScreen[i]=IMG_Load(mapAddress[i]); 
@@ -200,8 +239,8 @@ int main(){
 	{
 		tank[i].set_health(5);
 		tank[i].set_Xposition(1000);
-		tank[i].set_Yposition(1000);
-		tank[i].set_speed(20);
+		tank[i].set_Yposition(400);
+		tank[i].set_speed(10);
 		tank[i].set_angle(90);
 		tank[i].set_omega(0);
 		tank[i].set_Xspeed(0);
@@ -211,10 +250,11 @@ int main(){
 	/////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////
 	map_number_in_game=randomMap(max_numbers_of_map,map_number_in_game);
-	bool flag_SDLK_UP[4]={false,false,false,false};
-	bool flag_SDLK_DOWN[4]={false,false,false,false};
+	bool flag_UP[4]={false,false,false,false};
+	bool flag_DOWN[4]={false,false,false,false};
 	bool quit=false;
 	SDL_Rect offset;
+
 	while (quit==false)
 	{
 		if (SDL_PollEvent(&event))
@@ -226,7 +266,64 @@ int main(){
 			}
 			else
 			{
-    //If a key was pressed
+				for (int i=0 ; i<numbers_of_player_in_game ; i++)
+				{
+					handle_event(tank,flag_UP,flag_DOWN,i);
+				}
+			}
+		}
+		//move and round
+		for (int i=0 ; i<numbers_of_player_in_game ; i++)
+		{
+			tank[i].turn_around();
+			if(flag_UP[i]==true)
+			{
+				tank[i].set_Yspeed(-1);
+				tank[i].set_Xspeed(1);
+			}
+			if(flag_DOWN[i]==true)
+			{
+				tank[i].set_Xspeed(-1);
+				tank[i].set_Yspeed(1);
+			}
+			 if (flag_UP[i]==false && flag_DOWN[i]==false)
+			{
+				tank[i].set_Xspeed(0);
+				tank[i].set_Yspeed(0);
+			}
+			tank[i].move();
+		}
+		boxRGBA(SCREEN,0,0,frame_width,frame_height,0,0,0,255);
+		SDL_BlitSurface(mapScreen[map_number_in_game],NULL,SCREEN,NULL);
+		for (int i=0;i<numbers_of_player_in_game;i++)
+		{
+			offset.x=tank[i].get_Xposition();
+			offset.y=tank[i].get_Yposition();
+			SDL_BlitSurface(tankScreen[i],NULL,SCREEN,&offset);
+		}
+		SDL_Flip(SCREEN);
+		SDL_Delay(10);
+	}
+return 0;
+}
+///////////////////////////////////////////////////////////////////////////
+
+
+//                             functions                                //
+
+
+//////////////////////////////////////////////////////////////////////////
+int randomMap(int max_numbers_of_map,int mapNum)
+{
+    int p=rand()%max_numbers_of_map;
+    if(p==mapNum) randomMap(max_numbers_of_map,mapNum);
+    else return p;
+}
+
+void handle_event(Tank *tank,bool *flag_UP,bool *flag_DOWN,int i)
+{			
+	if (i==0)
+	    //If a key was pressed
    			 	if( event.type == SDL_KEYDOWN )//in ha rokh dad hastand halat nistand
   				 {
         //Adjust the velocity
@@ -234,22 +331,22 @@ int main(){
      				{
             			case SDLK_UP:
             			{
-            				flag_SDLK_UP[0]=true;break;
+            				flag_UP[i]=true;break;
             			}
             			     					
       					case SDLK_DOWN:
        					{
-      				    	flag_SDLK_DOWN[0]=true;break;
+      				    	flag_DOWN[i]=true;break;
       					}
 
             //for determining angle
             			case SDLK_LEFT:
             			{
-            				tank[0].set_omega(1);break;
+            				tank[i].set_omega(1);break;
             			}
             			case SDLK_RIGHT:
             			{
-                			tank[0].set_omega(-1);break;
+                			tank[i].set_omega(-1);break;
             			} 
       				}
     			}
@@ -261,56 +358,27 @@ int main(){
      			   {
             			case SDLK_UP:
             			{
-            				flag_SDLK_UP[0]=false;break;
+            				flag_UP[i]=false;break;
             			}
             			
             			case SDLK_DOWN:
             			{	
-            				flag_SDLK_DOWN[0]=false;break;
+            				flag_DOWN[i]=false;break;
             			}
             //for determining angle
             			case SDLK_LEFT:
             			{
-            				tank[0].set_omega(0);break;
+            				tank[i].set_omega(0);break;
             			}
             			case SDLK_RIGHT:
             			{
-            				tank[0].set_omega(0);break;
+            				tank[i].set_omega(0);break;
             			}
        				}
     			}
-			}
-		}
-		tank[0].turn_around();
-		if(flag_SDLK_UP[0]==true)
-		{
-			tank[0].set_Yspeed(-1);
-			tank[0].set_Xspeed(1);
-		}
-		if(flag_SDLK_DOWN[0]==true)
-		{
-			tank[0].set_Xspeed(-1);
-			tank[0].set_Yspeed(1);
-		}
-		 if (flag_SDLK_UP[0]==false && flag_SDLK_DOWN[0]==false)
-		{
-			tank[0].set_Xspeed(0);
-			tank[0].set_Yspeed(0);
-		}
-		tank[0].move();
-		//SDL_FreeSurface(SCREEN);
-		offset.x=tank[0].get_Xposition();
-		offset.y=tank[0].get_Yposition();
-		//update_monitor(tankScreen,SCREEN,numbersOFplayerINgame,tank);
-		boxRGBA(SCREEN,0,0,3200,2000,0,0,0,255);
-		/*SDL_BlitSurface(mapScreen[0],NULL,SCREEN,NULL);*/
-		SDL_BlitSurface(mapScreen[map_number_in_game],NULL,SCREEN,NULL);
-		SDL_BlitSurface(tankScreen[0],NULL,SCREEN,&offset);
-		SDL_Flip(SCREEN);
-		SDL_Delay(15);
-	}
-return 0;
+    //if (i==1)
+    //if (i==2)
+    //if (i==3)
+		
+
 }
-
-
-///////////////////////////////////////////////////////////////////////////
