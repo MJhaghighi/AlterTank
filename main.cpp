@@ -1,5 +1,6 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
+#include <SDL/SDL_rotozoom.h>
 #include <sstream>
 #include <SDL/SDL_gfxPrimitives.h>
 #include "global_variables.h"
@@ -197,6 +198,7 @@ SDL_Event event;
 SDL_Surface* SCREEN = NULL;
 SDL_Surface** tankScreen = new SDL_Surface*[max_numbers_of_player];
 SDL_Surface** mapScreen = new SDL_Surface*[max_numbers_of_map];
+SDL_Surface** rotatedTank = new SDL_Surface*[max_numbers_of_player];
 ////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -208,25 +210,27 @@ SDL_Surface** mapScreen = new SDL_Surface*[max_numbers_of_map];
 ////////////////////////////////////////////////////////////////////////////////////////////
 int main(){
 	SDL_Init(SDL_INIT_EVERYTHING);
+	bool flag_UP[4]={false,false,false,false};
+	bool flag_DOWN[4]={false,false,false,false};
 	int numbers_of_player_in_game=3;
 	int map_number_in_game=1;
+	map_number_in_game=randomMap(max_numbers_of_map,map_number_in_game);
+	//cin >> numberOFplayerINgame;
 	srand((unsigned)time(NULL));
 	// intital game screen
 	SCREEN=SDL_SetVideoMode(frame_width,frame_height,32,SDL_SWSURFACE);
-	//cin >> numberOFplayerINgame;
 	const char* tankAddress[4]={"tank1.png","tank2.png","tank3.png","tank4.png"};
 	const char* mapAddress[4]={"map1.png","map2.png","map3.png","map4.png"};
-
 	//initial tank screen
 	for (int i=0 ; i<max_numbers_of_player/*4*/; i++)
 	{	
     	tankScreen[i]=IMG_Load(tankAddress[i]);
+    	rotatedTank[i]=rotozoomSurface(tankScreen[i],/*angle*/0,/*zoom*/1.0,0);
     	if (!(tankScreen[i]))
     			printf("%s\n",IMG_GetError());
 	}
-
+	cout << "1";
 	//initial wall screen
-
 	for (int i=0 ; i<max_numbers_of_map/*4*/; i++)
 	{
 	    mapScreen[i]=IMG_Load(mapAddress[i]); 
@@ -240,7 +244,7 @@ int main(){
 		tank[i].set_health(5);
 		tank[i].set_Xposition(1000);
 		tank[i].set_Yposition(400);
-		tank[i].set_speed(10);
+		tank[i].set_speed(9);
 		tank[i].set_angle(90);
 		tank[i].set_omega(0);
 		tank[i].set_Xspeed(0);
@@ -249,9 +253,7 @@ int main(){
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////
-	map_number_in_game=randomMap(max_numbers_of_map,map_number_in_game);
-	bool flag_UP[4]={false,false,false,false};
-	bool flag_DOWN[4]={false,false,false,false};
+
 	bool quit=false;
 	SDL_Rect offset;
 
@@ -272,10 +274,18 @@ int main(){
 				}
 			}
 		}
-		//move and round
+		cout <<"2";
+		
 		for (int i=0 ; i<numbers_of_player_in_game ; i++)
 		{
-			tank[i].turn_around();
+			//rotation
+			if (tank[i].get_omega()!=0)
+			{	
+				SDL_FreeSurface(rotatedTank[i]);
+				tank[i].turn_around();
+				rotatedTank[i]=rotozoomSurface(tankScreen[i],tank[i].get_angle()-90,1.0,0);
+			}
+			//move
 			if(flag_UP[i]==true)
 			{
 				tank[i].set_Yspeed(-1);
@@ -293,16 +303,22 @@ int main(){
 			}
 			tank[i].move();
 		}
+		cout << "3";
 		boxRGBA(SCREEN,0,0,frame_width,frame_height,0,0,0,255);
 		SDL_BlitSurface(mapScreen[map_number_in_game],NULL,SCREEN,NULL);
 		for (int i=0;i<numbers_of_player_in_game;i++)
 		{
 			offset.x=tank[i].get_Xposition();
 			offset.y=tank[i].get_Yposition();
-			SDL_BlitSurface(tankScreen[i],NULL,SCREEN,&offset);
+			offset.x-=rotatedTank[i]->w/2-tankScreen[i]->w/2;
+			offset.y-=rotatedTank[i]->h/2-tankScreen[i]->h/2;
+			SDL_BlitSurface(rotatedTank[i],NULL,SCREEN,&offset);
 		}
+		cout << "4";
 		SDL_Flip(SCREEN);
 		SDL_Delay(10);
+		SDL_FreeSurface(SCREEN);
+
 	}
 return 0;
 }
@@ -343,6 +359,7 @@ void handle_event(Tank *tank,bool *flag_UP,bool *flag_DOWN,int i)
             			case SDLK_LEFT:
             			{
             				tank[i].set_omega(1);break;
+
             			}
             			case SDLK_RIGHT:
             			{
@@ -481,7 +498,7 @@ void handle_event(Tank *tank,bool *flag_UP,bool *flag_DOWN,int i)
             				tank[i].set_omega(0);break;
             			}
             			case SDLK_l:
-            			{
+            			{	
             				tank[i].set_omega(0);break;
             			}
        				}
