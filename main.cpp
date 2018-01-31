@@ -22,9 +22,13 @@ using namespace std;
 class Tank
 {
 	private:
+		bool flag_UP;
+		bool flag_DOWN;
 		int health;
 		int Xposition;
 		int Yposition;
+		int Xposition_center;
+		int Yposition_center;
 		int speed;
 		int Xspeed;
 		int Yspeed;
@@ -33,6 +37,11 @@ class Tank
 		int veapon_kind;//felan ye no tir
 
 	public:
+		void set_flag_UP(bool i);
+		void set_flag_DOWN(bool i);
+
+		void set_Xposition_center(int i);
+		void set_Yposition_center(int i);
 		void set_health(int i);
 		void set_Xposition(int i);
 		void set_Yposition(int i);
@@ -42,6 +51,11 @@ class Tank
 		void set_angle(int i);//degree
 		void set_omega(int i);
 		void set_veapon_kind(int i);
+		
+		bool get_flag_UP();
+		bool get_flag_DOWN();
+		int get_Xposition_center();
+		int get_Yposition_center();
 		int get_health();
 		int get_Xposition();
 		int get_Yposition();
@@ -55,6 +69,22 @@ class Tank
 		void move();
 		void turn_around();
 };
+void Tank::set_flag_UP(bool i)
+{
+	flag_UP=i;
+}
+void Tank::set_flag_DOWN(bool i)
+{
+	flag_DOWN=i;
+}
+void Tank::set_Xposition_center(int i)
+{
+	Xposition_center=i;
+}
+void Tank::set_Yposition_center(int i)
+{
+	Yposition_center=i;
+}
 void Tank::set_health(int i)
 {
 	health=i;
@@ -126,6 +156,22 @@ void Tank::set_omega(int i)
 	}
 }
 ////////////////////////////////////////
+bool Tank::get_flag_UP()
+{
+	return(flag_UP);
+}
+bool Tank::get_flag_DOWN()
+{
+	return(flag_DOWN);
+}
+int Tank::get_Xposition_center()
+{
+	return(Xposition_center);
+}
+int Tank::get_Yposition_center()
+{
+	return(Yposition_center);
+}
 int Tank::get_health()
 {
 	return(health);
@@ -182,7 +228,7 @@ void Tank::turn_around()
 
 //////////////////////////////////////////////////////////////////////////
 int randomMap(int max_numbers_of_map,int mapNum);
-void handle_event(Tank*tank,bool *flag_UP,bool *flag_DOWN,int i);
+void handle_event(Tank*tank,/*int &last_mouse_right_click_Xposition,int &last_mouse_right_click_Yposition,*/int i);
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -209,10 +255,14 @@ SDL_Surface** rotatedTank = new SDL_Surface*[max_numbers_of_player];
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 int main(){
+	int last_mouse_right_click_Xposition=0;
+	int last_mouse_right_click_Yposition=0;
+	int mouse_Xposition;
+	int mouse_Yposition;
 	SDL_Init(SDL_INIT_EVERYTHING);
 	bool flag_UP[4]={false,false,false,false};
 	bool flag_DOWN[4]={false,false,false,false};
-	int numbers_of_player_in_game=3;
+	int numbers_of_player_in_game=4;
 	int map_number_in_game=1;
 	map_number_in_game=randomMap(max_numbers_of_map,map_number_in_game);
 	//cin >> numberOFplayerINgame;
@@ -229,7 +279,7 @@ int main(){
     	if (!(tankScreen[i]))
     			printf("%s\n",IMG_GetError());
 	}
-	cout << "1";
+	
 	//initial wall screen
 	for (int i=0 ; i<max_numbers_of_map/*4*/; i++)
 	{
@@ -241,9 +291,13 @@ int main(){
 	Tank *tank=new Tank[4];
 	for (int i=0 ; i<numbers_of_player_in_game ; i++)
 	{
-		tank[i].set_health(5);
+		tank[i].set_flag_UP(false);
+		tank[i].set_flag_DOWN(false);
 		tank[i].set_Xposition(1000);
-		tank[i].set_Yposition(400);
+		tank[i].set_Yposition(400);				
+		tank[i].set_Xposition_center(tankScreen[i]->w/2+tank[i].get_Xposition());
+		tank[i].set_Yposition_center(tankScreen[i]->h/2+tank[i].get_Yposition());
+		tank[i].set_health(5);
 		tank[i].set_speed(9);
 		tank[i].set_angle(90);
 		tank[i].set_omega(0);
@@ -254,75 +308,89 @@ int main(){
 	/////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////
 
-	bool quit=false;
+	bool Continue=true;
 	SDL_Rect offset;
 
-	while (quit==false)
-	{
+	while (Continue)
+	{	
+////////////////////////////////menu/////////////////////////////////////
+
+
+
+
+
+////////////////////////////////handle event//////////////////////////////
 		if (SDL_PollEvent(&event))
 		{
 			
 			if (event.type==SDL_QUIT)
 			{
-				quit=true;
+				Continue=false;
 			}
 			else
 			{
 				for (int i=0 ; i<numbers_of_player_in_game ; i++)
 				{
-					handle_event(tank,flag_UP,flag_DOWN,i);
+					handle_event(tank,/*last_mouse_right_click_Xposition,last_mouse_right_click_Yposition,*/i);
 				}
 			}
 		}
-		cout <<"2";
-		
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////make move and rotation/////////////////////////////////////////////////////////
 		for (int i=0 ; i<numbers_of_player_in_game ; i++)
 		{
-			//rotation
-			if (tank[i].get_omega()!=0)
-			{	
-				SDL_FreeSurface(rotatedTank[i]);
-				tank[i].turn_around();
-				rotatedTank[i]=rotozoomSurface(tankScreen[i],tank[i].get_angle()-90,1.0,0);
-			}
-			//move
-			if(flag_UP[i]==true)
+			SDL_FreeSurface(rotatedTank[i]);
+			tank[i].turn_around();
+			rotatedTank[i]=rotozoomSurface(tankScreen[i],tank[i].get_angle()-90,1.0,0);
+			if(tank[i].get_flag_UP()==true)
 			{
 				tank[i].set_Yspeed(-1);
 				tank[i].set_Xspeed(1);
 			}
-			if(flag_DOWN[i]==true)
+			if(tank[i].get_flag_DOWN()==true)
 			{
 				tank[i].set_Xspeed(-1);
 				tank[i].set_Yspeed(1);
 			}
-			 if (flag_UP[i]==false && flag_DOWN[i]==false)
+			if (tank[i].get_flag_UP()==false  &&  tank[i].get_flag_DOWN()==false)
 			{
 				tank[i].set_Xspeed(0);
 				tank[i].set_Yspeed(0);
 			}
 			tank[i].move();
 		}
-		cout << "3";
+
+			
+		
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////// Blitting Surface //////////////////////////////////////////////////////////////////
 		boxRGBA(SCREEN,0,0,frame_width,frame_height,0,0,0,255);
 		SDL_BlitSurface(mapScreen[map_number_in_game],NULL,SCREEN,NULL);
 		for (int i=0;i<numbers_of_player_in_game;i++)
 		{
+			tank[i].set_Xposition_center(tankScreen[i]->w/2+tank[i].get_Xposition());
+			tank[i].set_Yposition_center(tankScreen[i]->h/2+tank[i].get_Yposition());
 			offset.x=tank[i].get_Xposition();
 			offset.y=tank[i].get_Yposition();
 			offset.x-=rotatedTank[i]->w/2-tankScreen[i]->w/2;
 			offset.y-=rotatedTank[i]->h/2-tankScreen[i]->h/2;
 			SDL_BlitSurface(rotatedTank[i],NULL,SCREEN,&offset);
+			filledCircleRGBA(SCREEN,tank[i].get_Xposition_center(),tank[i].get_Yposition_center(),20,100,50,200,255);
 		}
-		cout << "4";
+		//cout << last_mouse_right_click_Xposition<<" "<<last_mouse_right_click_Yposition<<"\n";
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////// go to next frame //////////////////////////////////////////////////////////////////////
 		SDL_Flip(SCREEN);
-		SDL_Delay(10);
+		SDL_Delay(20);
 		SDL_FreeSurface(SCREEN);
 
+
+		
+	
 	}
 return 0;
 }
-///////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
 
 //                             functions                                //
@@ -336,7 +404,7 @@ int randomMap(int max_numbers_of_map,int mapNum)
     else return p;
 }
 
-void handle_event(Tank *tank,bool *flag_UP,bool *flag_DOWN,int i)
+void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_mouse_right_click_Yposition,*/int i)
 {			
 	if (i==0)
 	    //If a key was pressed
@@ -347,12 +415,12 @@ void handle_event(Tank *tank,bool *flag_UP,bool *flag_DOWN,int i)
      				{
             			case SDLK_UP:
             			{
-            				flag_UP[i]=true;break;
+            				tank[i].set_flag_UP(true);break;
             			}
             			     					
       					case SDLK_DOWN:
        					{
-      				    	flag_DOWN[i]=true;break;
+      				    	tank[i].set_flag_DOWN(true);break;
       					}
 
             //for determining angle
@@ -375,12 +443,12 @@ void handle_event(Tank *tank,bool *flag_UP,bool *flag_DOWN,int i)
      			   {
             			case SDLK_UP:
             			{
-            				flag_UP[i]=false;break;
+            				tank[i].set_flag_UP(false);break;
             			}
             			
             			case SDLK_DOWN:
             			{	
-            				flag_DOWN[i]=false;break;
+            				tank[i].set_flag_DOWN(false);break;
             			}
             //for determining angle
             			case SDLK_LEFT:
@@ -394,7 +462,6 @@ void handle_event(Tank *tank,bool *flag_UP,bool *flag_DOWN,int i)
        				}
     			}
     if (i==1)
-    {
     	if( event.type == SDL_KEYDOWN )//in ha rokh dad hastand halat nistand
   				 {
         //Adjust the velocity
@@ -402,12 +469,12 @@ void handle_event(Tank *tank,bool *flag_UP,bool *flag_DOWN,int i)
      				{
             			case SDLK_w:
             			{
-            				flag_UP[i]=true;break;
+            				tank[i].set_flag_UP(true);break;
             			}
             			     					
       					case SDLK_s:
        					{
-      				    	flag_DOWN[i]=true;break;
+      				    	tank[i].set_flag_DOWN(true);break;
       					}
 
             //for determining angle
@@ -429,12 +496,12 @@ void handle_event(Tank *tank,bool *flag_UP,bool *flag_DOWN,int i)
      			   {
             			case SDLK_w:
             			{
-            				flag_UP[i]=false;break;
+            				tank[i].set_flag_UP(false);break;
             			}
             			
             			case SDLK_s:
             			{	
-            				flag_DOWN[i]=false;break;
+            				tank[i].set_flag_DOWN(false);break;
             			}
             //for determining angle
             			case SDLK_a:
@@ -447,64 +514,48 @@ void handle_event(Tank *tank,bool *flag_UP,bool *flag_DOWN,int i)
             			}
        				}
     			}
+/*
+	if (i==3)
+    	if (event.type == SDL_MOUSEBUTTONDOWN)//joy stick
+    	{	//cout << "OK1";
 
-    }
-    if (i==2)
-    {
-    	if( event.type == SDL_KEYDOWN )//in ha rokh dad hastand halat nistand
-  				 {
-        //Adjust the velocity
-      				switch( event.key.keysym.sym )
-     				{
-            			case SDLK_i:
-            			{
-            				flag_UP[i]=true;break;
-            			}
-            			     					
-      					case SDLK_k:
-       					{
-      				    	flag_DOWN[i]=true;break;
-      					}
+    		switch(event.button.button)
+    		{
+    		case SDL_BUTTON_LEFT:
+    		{
+    			last_mouse_right_click_Yposition=event.button.y;
+    			last_mouse_right_click_Xposition=event.button.x;
+    			//cout<< "OK2";
+    			tank[i].set_angle(180*atan2( tank[i].get_Yposition_center() - last_mouse_right_click_Yposition  ,  last_mouse_right_click_Xposition - tank[i].get_Xposition_center() )/PI);
+    			tank[i].set_flag_UP(true);
 
-            //for determining angle
-            			case SDLK_j:
-            			{
-            				tank[i].set_omega(1);break;
-            			}
-            			case SDLK_l:
-            			{
-                			tank[i].set_omega(-1);break;
-            			} 
-      				}
-    			}
-    //If a key was released
-    			else if( event.type == SDL_KEYUP )
-    			{
-        //Adjust the velocit
-        			switch( event.key.keysym.sym )
-     			   {
-            			case SDLK_i:
-            			{
-            				flag_UP[i]=false;break;
-            			}
-            			
-            			case SDLK_k:
-            			{	
-            				flag_DOWN[i]=false;break;
-            			}
-            //for determining angle
-            			case SDLK_j:
-            			{
-            				tank[i].set_omega(0);break;
-            			}
-            			case SDLK_l:
-            			{	
-            				tank[i].set_omega(0);break;
-            			}
-       				}
-    			}
-    }
-    //if (i==3)
+    		}break;
+    		
+
+    		/*case SDL_BUTTON_LEFT:
+    		{
+				shelik
+    		}*/
+			//}    
+    	//}	
+}
+
+
+
+
+
+void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game)
+{
+	SDL_Surface* setting=IMG_Load("setting.png");
+	SDL_Surface* play_game=IMG_Load("playgame.png");
+	SDL_Surface* single_player=IMG_Load("singleplayer.png");
+	SDL_Surface* two_player=IMG_Load("twoplayer.png");
+	SDL_Surface* three_player=IMG_Load("threeplayer.png");
+	SDL_Surface* four_player=IMG_Load("fourplayer.png");
+	bool quit=true;
+	while(quit)
+	{
 		
-
+	}
+	return;
 }
