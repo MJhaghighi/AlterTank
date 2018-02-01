@@ -19,7 +19,7 @@ class Tank
 	private:
 		int tankScreen_width;
 		int tankScreen_height;
-		int critical_dot[8][2]; // 0 is x  and  1 is y
+		int critical_dot[12][2]; // 0 is x  and  1 is y
 		bool flag_UP;
 		bool flag_DOWN;
 		int health;
@@ -35,6 +35,9 @@ class Tank
 		int veapon_kind;//felan ye no tir
 
 	public:
+
+        friend class Bullet;
+
 		void set_tankScreen_width(int i);
 		void set_tankScreen_height(int i);
 		void set_flag_UP(bool i);
@@ -72,20 +75,39 @@ class Tank
 		void turn_around();
 };
 
+class Bullet
+{
+    public:
+        Tank ob;
+        int x;
+        int y;
+        int V;
+        int Vx;
+        int Vy;
+        int theta=ob.angle;
+        bool flag_show=0;
+};
+
 
 void Tank::check_collision(SDL_Surface *SCREEN)
 {
 	Uint32 *pixels = (Uint32 *) SCREEN->pixels;
-	for(int j=0 ; j<=2 ; j++)
+	for(int j=0 ; j<=4 ; j++)
 	{
-		Uint8 *color = (Uint8 *) & (pixels[critical_dot[j][1] *SCREEN->w+critical_dot[j][0]]);
+        for(int k=-2 ; k<=2 ; k++)
+        {
+		Uint8 *color = (Uint8 *) & ( pixels[(critical_dot[j][1]+k) *SCREEN->w+(critical_dot[j][0]+k)] );
 		if(color[2]>240 && color[1]>240 && color[0]>240) flag_UP=0;
+		}
 	}
 
-	for(int j=3 ; j<=5 ; j++)
+	for(int j=5 ; j<=9 ; j++)
 	{
-		Uint8 *color = (Uint8 *) & (pixels[critical_dot[j][1] *SCREEN->w+critical_dot[j][0]]);
+        for(int k=-2 ; k<=2 ; k++)
+        {
+		Uint8 *color = (Uint8 *) & ( pixels[(critical_dot[j][1]+k) *SCREEN->w+(critical_dot[j][0]+k)] );
 		if(color[2]>240 && color[1]>240 && color[0]>240) flag_DOWN=0;
+        }
 	}
 
 }
@@ -93,30 +115,41 @@ void Tank::check_collision(SDL_Surface *SCREEN)
 void Tank::set_critical_dots()
 {
 
-		critical_dot[0][0]=get_Xposition_center()+sqrt(pow((tankScreen_width/2),2)+pow((tankScreen_height/2),2))*cos(get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//x
+		critical_dot[0][0]=get_Xposition_center()+sqrt(pow((tankScreen_width/2),2)+pow((tankScreen_height/2),2))*cos(get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//x   1
 		critical_dot[0][1]=get_Yposition_center()-sqrt(pow((tankScreen_width/2),2)+pow((tankScreen_height/2),2))*sin(get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//y
 
-		critical_dot[1][0]=get_Xposition_center()+ (tankScreen_height/2)*cos(get_angle()/180.0*3.1415);//x
-		critical_dot[1][1]=get_Yposition_center()-(tankScreen_height/2)*sin(get_angle()/180.0*3.1415);//y
+		critical_dot[2][0]=get_Xposition_center()+ (tankScreen_height/2)*cos(get_angle()/180.0*3.1415);//x   3
+		critical_dot[2][1]=get_Yposition_center()-(tankScreen_height/2)*sin(get_angle()/180.0*3.1415);//y
 
-		critical_dot[2][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*cos(get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//x
-		critical_dot[2][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*sin(get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//y
+		critical_dot[4][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*cos(get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//x   5
+		critical_dot[4][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*sin(get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//y
 
-		critical_dot[3][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*cos(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//x
-		critical_dot[3][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*sin(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//y
+		critical_dot[5][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*cos(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//x   6
+		critical_dot[5][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*sin(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//y
 
-		critical_dot[4][0]=get_Xposition_center()-(tankScreen_height/2)*cos(get_angle()/180.0*3.1415);//x
-		critical_dot[4][1]=get_Yposition_center()+(tankScreen_height/2)*sin(get_angle()/180.0*3.1415);//y
+		critical_dot[7][0]=get_Xposition_center()-(tankScreen_height/2)*cos(get_angle()/180.0*3.1415);//x   8
+		critical_dot[7][1]=get_Yposition_center()+(tankScreen_height/2)*sin(get_angle()/180.0*3.1415);//y
 
-		critical_dot[5][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*cos(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//x
-		critical_dot[5][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*sin(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//y
+		critical_dot[9][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*cos(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//x   10
+		critical_dot[9][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*sin(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//y
 
-		critical_dot[6][0]=get_Xposition_center()+(tankScreen_width/2)*cos(PI/2+get_angle()/180.0*3.1415);//x
-		critical_dot[6][1]=get_Yposition_center()-(tankScreen_width/2)*sin(PI/2+get_angle()/180.0*3.1415);//y
+		critical_dot[10][0]=get_Xposition_center()+(tankScreen_width/2)*cos(PI/2+get_angle()/180.0*3.1415);//x   11
+		critical_dot[10][1]=get_Yposition_center()-(tankScreen_width/2)*sin(PI/2+get_angle()/180.0*3.1415);//y
 
-		critical_dot[7][0]=get_Xposition_center()+(tankScreen_width/2)*cos(get_angle()/180.0*3.1415-PI/2);//x
-		critical_dot[7][1]=get_Yposition_center()-(tankScreen_width/2)*sin(get_angle()/180.0*3.1415-PI/2);//y
+		critical_dot[11][0]=get_Xposition_center()+(tankScreen_width/2)*cos(get_angle()/180.0*3.1415-PI/2);//x   12
+		critical_dot[11][1]=get_Yposition_center()-(tankScreen_width/2)*sin(get_angle()/180.0*3.1415-PI/2);//y
 
+		critical_dot[1][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*cos(get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height/2)));//x   2
+		critical_dot[1][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height/2)));//y
+
+		critical_dot[3][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*cos(get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height/2)));//x   4
+		critical_dot[3][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height/2)));//y
+
+		critical_dot[6][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*cos(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height/2)));//x   7
+		critical_dot[6][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height/2)));//y
+
+		critical_dot[8][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*cos(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height/2)));//x   9
+        critical_dot[8][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height/2)));//y
 }
 
 
@@ -448,34 +481,11 @@ int main(){
         for(int i=0;i<numbers_of_player_in_game;i++)
 			tank[i].check_collision(SCREEN);
 
-/*filledCircleRGBA(SCREEN,tank[i].get_Xposition_center(),tank[i].get_Yposition_center(),10,255,0,0,255);//markaz
-
-filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+(tankScreen[i]->h/2)*cos(tank[i].get_angle()/180.0*3.1415),tank[i].get_Yposition_center()-(tankScreen[i]->h/2)*sin(tank[i].get_angle()/180.0*3.1415),10,255,0,0,255);//balla
-
-filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()-(tankScreen[i]->h/2)*cos(tank[i].get_angle()/180.0*3.1415),tank[i].get_Yposition_center()+(tankScreen[i]->h/2)*sin(tank[i].get_angle()/180.0*3.1415),10,255,0,0,255);//payin
-
-filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
-,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);//goshe rast balla
-
-filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
-,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);//goshe chap balla
-
-filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(PI+tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
-,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(PI+tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);// goshe chap payin
-
-filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(PI+tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
-,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(PI+tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);// goshe rast payin
-
-		}*/
-		//cout << last_mouse_right_click_Xposition<<" "<<last_mouse_right_click_Yposition<<"\n";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// go to next frame //////////////////////////////////////////////////////////////////////
 		SDL_Flip(SCREEN);
 		SDL_Delay(20);
 		SDL_FreeSurface(SCREEN);
-
-
-
 
 	}
 return 0;
