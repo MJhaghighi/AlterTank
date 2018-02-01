@@ -229,6 +229,7 @@ void Tank::turn_around()
 //////////////////////////////////////////////////////////////////////////
 int randomMap(int max_numbers_of_map,int mapNum);
 void handle_event(Tank*tank,/*int &last_mouse_right_click_Xposition,int &last_mouse_right_click_Yposition,*/int i);
+void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event);
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -309,14 +310,10 @@ int main(){
 	bool Continue=true;
 	SDL_Rect offset;
 
+////////////////////////////////menu/////////////////////////////////////
+	menu(SCREEN,numbers_of_player_in_game,event);
 	while (Continue)
 	{	
-////////////////////////////////menu/////////////////////////////////////
-
-
-
-
-
 ////////////////////////////////handle event//////////////////////////////
 		if (SDL_PollEvent(&event))
 		{
@@ -373,7 +370,18 @@ int main(){
 			offset.x-=rotatedTank[i]->w/2-tankScreen[i]->w/2;
 			offset.y-=rotatedTank[i]->h/2-tankScreen[i]->h/2;
 			SDL_BlitSurface(rotatedTank[i],NULL,SCREEN,&offset);
-			filledCircleRGBA(SCREEN,tank[i].get_Xposition_center(),tank[i].get_Yposition_center(),20,100,50,200,255);
+			filledCircleRGBA(SCREEN,tank[i].get_Xposition_center(),tank[i].get_Yposition_center(),10,255,0,0,255);//markaz
+			filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+(tankScreen[i]->h/2)*cos(tank[i].get_angle()/180.0*3.1415),tank[i].get_Yposition_center()-(tankScreen[i]->h/2)*sin(tank[i].get_angle()/180.0*3.1415),10,255,0,0,255);//balla
+			filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()-(tankScreen[i]->h/2)*cos(tank[i].get_angle()/180.0*3.1415),tank[i].get_Yposition_center()+(tankScreen[i]->h/2)*sin(tank[i].get_angle()/180.0*3.1415),10,255,0,0,255);//payin
+			filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
+			,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);//goshe rast balla
+			filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
+			,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);//goshe chap balla
+			filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(PI+tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
+			,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(PI+tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);// goshe chap payin
+			filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(PI+tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
+			,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(PI+tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);// goshe rast payin
+
 		}
 		//cout << last_mouse_right_click_Xposition<<" "<<last_mouse_right_click_Yposition<<"\n";
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -542,18 +550,158 @@ void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_m
 
 
 
-void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game)
+void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 {
+	int mouse_xpos=0;
+	int mouse_ypos=0;
+	//SDL_Surface* SCREEN=SDL_SetVideoMode(frame_width,frame_height,32,SDL_SWSURFACE);
 	SDL_Surface* setting=IMG_Load("setting.png");
-	SDL_Surface* play_game=IMG_Load("playgame.png");
-	SDL_Surface* single_player=IMG_Load("singleplayer.png");
-	SDL_Surface* two_player=IMG_Load("twoplayer.png");
-	SDL_Surface* three_player=IMG_Load("threeplayer.png");
-	SDL_Surface* four_player=IMG_Load("fourplayer.png");
+	SDL_Surface* playgame=IMG_Load("playgame.png");
+	SDL_Surface* singleplayer=IMG_Load("singleplayer.png");
+	SDL_Surface* twoplayer=IMG_Load("twoplayer.png");
+	SDL_Surface* threeplayer=IMG_Load("threeplayer.png");
+	SDL_Surface* fourplayer=IMG_Load("fourplayer.png");
+	bool flag_show_playgame_and_setting=true;
+
+	int setting_xpos=600;
+	int setting_ypos=550;
+	SDL_Rect setting_offset;
+	setting_offset.x=setting_xpos;
+	setting_offset.y=setting_ypos;
+
+	int playgame_xpos=600;
+	int playgame_ypos=150;
+	SDL_Rect playgame_offset;
+	playgame_offset.x=playgame_xpos;
+	playgame_offset.y=playgame_ypos;
+
+	int singleplayer_xpos=600;
+	int singleplayer_ypos=30;
+	//int singleplayer_final_ypos=30;
+	SDL_Rect singleplayer_offset;
+	singleplayer_offset.x=singleplayer_xpos;
+	singleplayer_offset.y=singleplayer_ypos;
+
+	int twoplayer_xpos=600;
+	int twoplayer_ypos=30;//240
+	int twoplayer_final_ypos=240;
+	SDL_Rect twoplayer_offset;
+	twoplayer_offset.x=twoplayer_xpos;
+	twoplayer_offset.y=twoplayer_ypos;
+
+	int threeplayer_xpos=600;
+	int threeplayer_ypos=30;//450
+	int threeplayer_final_ypos=450;
+	SDL_Rect threeplayer_offset;
+	threeplayer_offset.x=threeplayer_xpos;
+	threeplayer_offset.y=threeplayer_ypos;
+
+	int fourplayer_xpos=600;
+	int fourplayer_ypos=30;//660
+	int fourplayer_final_ypos=660;
+	SDL_Rect fourplayer_offset;
+	fourplayer_offset.x=fourplayer_xpos;
+	fourplayer_offset.y=fourplayer_ypos;
+
 	bool quit=true;
-	while(quit)
+	int i=0;
+	while(quit==true)
 	{
+		SDL_FreeSurface(SCREEN);
+		boxRGBA(SCREEN,0,0,frame_width,frame_height,255,255,255,255);
+		if (SDL_PollEvent(&event)){}
+			if (event.type==SDL_QUIT)
+			{
+				exit(0);
+			}
+
+		mouse_xpos=event.motion.x;
+		mouse_ypos=event.motion.y;
+
+		if (mouse_xpos>playgame_xpos && mouse_xpos<playgame_xpos+playgame->w &&
+			mouse_ypos>playgame_ypos && mouse_ypos<playgame_ypos+playgame->h)
+		{
+			flag_show_playgame_and_setting=false;
+		}
+		else if (mouse_xpos<playgame_xpos || mouse_xpos>playgame_xpos+playgame->w)
+		{
+			flag_show_playgame_and_setting=true;
+			i=0;
+		}
+
 		
+		if (flag_show_playgame_and_setting==false)
+		{
+			for (; i<20 ; i++)
+			{
+				twoplayer_offset.y=twoplayer_ypos+i*(twoplayer_final_ypos-30)/20.0;
+				threeplayer_offset.y=threeplayer_ypos+i*(threeplayer_final_ypos-30)/20.0;
+				fourplayer_offset.y=fourplayer_ypos+i*(fourplayer_final_ypos-30)/20.0;
+
+				SDL_BlitSurface(singleplayer,NULL,SCREEN,&singleplayer_offset);
+				SDL_BlitSurface(twoplayer,NULL,SCREEN,&twoplayer_offset);
+				SDL_BlitSurface(threeplayer,NULL,SCREEN,&threeplayer_offset);
+				SDL_BlitSurface(fourplayer,NULL,SCREEN,&fourplayer_offset);
+				SDL_Flip(SCREEN);
+			}
+		}
+
+		if(i==20)
+		{
+				SDL_BlitSurface(singleplayer,NULL,SCREEN,&singleplayer_offset);
+				SDL_BlitSurface(twoplayer,NULL,SCREEN,&twoplayer_offset);
+				SDL_BlitSurface(threeplayer,NULL,SCREEN,&threeplayer_offset);
+				SDL_BlitSurface(fourplayer,NULL,SCREEN,&fourplayer_offset);
+				SDL_Flip(SCREEN);
+				SDL_FreeSurface(SCREEN);
+
+			if (SDL_PollEvent(&event))
+			{
+				if (event.type == SDL_MOUSEBUTTONDOWN)
+				{
+					if (mouse_xpos>singleplayer_offset.x && mouse_xpos<singleplayer_offset.x+singleplayer->w
+						&& mouse_ypos>singleplayer_offset.y && mouse_ypos<singleplayer_offset.y + singleplayer->h)
+					{
+						numbers_of_player_in_game=1;
+						cout << "single\n";
+						return;
+					}
+
+					else if (mouse_xpos>twoplayer_offset.x && mouse_xpos<twoplayer_offset.x+twoplayer->w
+						&& mouse_ypos>twoplayer_offset.y && mouse_ypos<twoplayer_offset.y + twoplayer->h)
+					{
+						numbers_of_player_in_game=2;
+						cout << "two\n";
+						return;
+					}
+
+					else if (mouse_xpos>threeplayer_offset.x && mouse_xpos<threeplayer_offset.x+threeplayer->w
+						&& mouse_ypos>threeplayer_offset.y && mouse_ypos<threeplayer_offset.y + threeplayer->h)
+					{
+						numbers_of_player_in_game=3;
+						cout << "three\n";
+						return;
+					}
+
+					else if (mouse_xpos>fourplayer_offset.x && mouse_xpos<fourplayer_offset.x+fourplayer->w
+						&& mouse_ypos>fourplayer_offset.y && mouse_ypos<fourplayer_offset.y + fourplayer->h)
+					{
+						numbers_of_player_in_game=4;
+						cout << "four\n";
+						return;
+					}
+				}
+			}
+		}
+		
+		//filledCircleRGBA(SCREEN,playgame_xpos+playgame->w,playgame_ypos,100,0,0,0,255);
+		if (flag_show_playgame_and_setting==true)
+		{
+			SDL_BlitSurface(setting,NULL,SCREEN,&setting_offset);
+			SDL_BlitSurface(playgame,NULL,SCREEN,&playgame_offset);
+		}
+		SDL_Flip(SCREEN);
+		//SDL_Delay(2000);
 	}
-	return;
+	return ;
 }
