@@ -11,12 +11,7 @@ using namespace std;
 
 /////////////////////////////////////////////////////////////////////////////
 
-
-
 //                             classes                                    //
-
-
-
 
 ///////////////////////////////////////////////////////////////////////////
 class Tank
@@ -24,7 +19,7 @@ class Tank
 	private:
 		int tankScreen_width;
 		int tankScreen_height;
-		int critical_dot[8][2]; // 0 is x  and  1 is y//0->
+		int critical_dot[8][2]; // 0 is x  and  1 is y
 		bool flag_UP;
 		bool flag_DOWN;
 		int health;
@@ -45,7 +40,7 @@ class Tank
 		void set_flag_UP(bool i);
 		void set_flag_DOWN(bool i);
 
-		bool check_collision(SDL_Surface *SCREEN);
+		void check_collision(SDL_Surface *SCREEN);
 		void set_critical_dots();
 		void set_Xposition_center(int i);
 		void set_Yposition_center(int i);
@@ -58,7 +53,7 @@ class Tank
 		void set_angle(int i);//degree
 		void set_omega(int i);
 		void set_veapon_kind(int i);
-		
+
 		bool get_flag_UP();
 		bool get_flag_DOWN();
 		int get_Xposition_center();
@@ -78,15 +73,21 @@ class Tank
 };
 
 
-bool Tank::check_collision(SDL_Surface *SCREEN)
+void Tank::check_collision(SDL_Surface *SCREEN)
 {
 	Uint32 *pixels = (Uint32 *) SCREEN->pixels;
-	for(int j=0 ; j<8 ; j++)
+	for(int j=0 ; j<=2 ; j++)
 	{
 		Uint8 *color = (Uint8 *) & (pixels[critical_dot[j][1] *SCREEN->w+critical_dot[j][0]]);
-		if(color[2]>240 && color[1]>240 && color[0]>240) return true;
+		if(color[2]>240 && color[1]>240 && color[0]>240) flag_UP=0;
 	}
-	return false;
+
+	for(int j=3 ; j<=5 ; j++)
+	{
+		Uint8 *color = (Uint8 *) & (pixels[critical_dot[j][1] *SCREEN->w+critical_dot[j][0]]);
+		if(color[2]>240 && color[1]>240 && color[0]>240) flag_DOWN=0;
+	}
+
 }
 
 void Tank::set_critical_dots()
@@ -163,7 +164,7 @@ void Tank::set_speed(int i)
 void Tank::set_Xspeed(int i)
 {
 	if (i==1)
-	{	
+	{
 		Xspeed=(float)get_speed()*cos((float)get_angle()*PI/180.0);
 	}
 	else if (i==-1)
@@ -329,7 +330,7 @@ int main(){
 	const char* mapAddress[4]={"map1.png","map2.png","map3.png","map4.png"};
 	//initial tank screen
 	for (int i=0 ; i<max_numbers_of_player/*4*/; i++)
-	{	
+	{
     	tankScreen[i]=IMG_Load(tankAddress[i]);
     	rotatedTank[i]=rotozoomSurface(tankScreen[i],/*angle*/0,/*zoom*/1.0,0);
     	if (!(tankScreen[i]))
@@ -340,7 +341,7 @@ int main(){
 	//initial wall screen
 	for (int i=0 ; i<max_numbers_of_map/*4*/; i++)
 	{
-	    mapScreen[i]=IMG_Load(mapAddress[i]); 
+	    mapScreen[i]=IMG_Load(mapAddress[i]);
 	    if (!(mapScreen[i]))
     			printf("%s\n",IMG_GetError());
 	}
@@ -351,7 +352,7 @@ int main(){
 		tank[i].set_flag_UP(false);
 		tank[i].set_flag_DOWN(false);
 		tank[i].set_Xposition(990);
-		tank[i].set_Yposition(390);				
+		tank[i].set_Yposition(390);
 		tank[i].set_Xposition_center(tankScreen[i]->w/2+tank[i].get_Xposition());
 		tank[i].set_Yposition_center(tankScreen[i]->h/2+tank[i].get_Yposition());
 		tank[i].set_health(5);
@@ -373,11 +374,11 @@ int main(){
 ////////////////////////////////menu/////////////////////////////////////
 	menu(SCREEN,numbers_of_player_in_game,event);
 	while (Continue)
-	{	
+	{
 ////////////////////////////////handle event//////////////////////////////
 		if (SDL_PollEvent(&event))
 		{
-			
+
 			if (event.type==SDL_QUIT)
 			{
 				Continue=false;
@@ -392,7 +393,31 @@ int main(){
 		}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////make move and rotation/////////////////////////////////////////////////////////
-		for (int i=0 ; i<numbers_of_player_in_game ; i++)
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////// Blitting Surface //////////////////////////////////////////////////////////////////
+		boxRGBA(SCREEN,0,0,frame_width,frame_height,0,0,0,255);
+		SDL_BlitSurface(mapScreen[map_number_in_game],NULL,SCREEN,NULL);
+		for(int i=0;i<numbers_of_player_in_game;i++)
+		{
+			tank[i].set_Xposition_center(tankScreen[i]->w/2+tank[i].get_Xposition());
+			tank[i].set_Yposition_center(tankScreen[i]->h/2+tank[i].get_Yposition());
+			offset.x=tank[i].get_Xposition();
+			offset.y=tank[i].get_Yposition();
+			offset.x-=rotatedTank[i]->w/2-tankScreen[i]->w/2;
+			offset.y-=rotatedTank[i]->h/2-tankScreen[i]->h/2;
+			SDL_BlitSurface(rotatedTank[i],NULL,SCREEN,&offset);
+
+			tank[i].set_critical_dots();
+		}
+
+        for(int i=0;i<numbers_of_player_in_game;i++)
+			tank[i].check_collision(SCREEN);
+
+        for (int i=0 ; i<numbers_of_player_in_game ; i++)
 		{
 			SDL_FreeSurface(rotatedTank[i]);
 			tank[i].turn_around();
@@ -412,47 +437,32 @@ int main(){
 				tank[i].set_Xspeed(0);
 				tank[i].set_Yspeed(0);
 			}
+
+		}
+
+
+        for(int i=0;i<numbers_of_player_in_game;i++)
 			tank[i].move();
-		}
 
-			
-		
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////// Blitting Surface //////////////////////////////////////////////////////////////////
-		boxRGBA(SCREEN,0,0,frame_width,frame_height,0,0,0,255);
-		SDL_BlitSurface(mapScreen[map_number_in_game],NULL,SCREEN,NULL);
-		for(int i=0;i<numbers_of_player_in_game;i++)
-		{
-			tank[i].set_Xposition_center(tankScreen[i]->w/2+tank[i].get_Xposition());
-			tank[i].set_Yposition_center(tankScreen[i]->h/2+tank[i].get_Yposition());
-			offset.x=tank[i].get_Xposition();
-			offset.y=tank[i].get_Yposition();
-			offset.x-=rotatedTank[i]->w/2-tankScreen[i]->w/2;
-			offset.y-=rotatedTank[i]->h/2-tankScreen[i]->h/2;
-			SDL_BlitSurface(rotatedTank[i],NULL,SCREEN,&offset);
-			
-			tank[i].set_critical_dots();
-		}
 
-		for(int i=0;i<numbers_of_player_in_game;i++)
-			if( tank[i].check_collision(SCREEN) ==1) exit(0);
-
+        for(int i=0;i<numbers_of_player_in_game;i++)
+			tank[i].check_collision(SCREEN);
 
 /*filledCircleRGBA(SCREEN,tank[i].get_Xposition_center(),tank[i].get_Yposition_center(),10,255,0,0,255);//markaz
-			
+
 filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+(tankScreen[i]->h/2)*cos(tank[i].get_angle()/180.0*3.1415),tank[i].get_Yposition_center()-(tankScreen[i]->h/2)*sin(tank[i].get_angle()/180.0*3.1415),10,255,0,0,255);//balla
-		
+
 filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()-(tankScreen[i]->h/2)*cos(tank[i].get_angle()/180.0*3.1415),tank[i].get_Yposition_center()+(tankScreen[i]->h/2)*sin(tank[i].get_angle()/180.0*3.1415),10,255,0,0,255);//payin
-			
+
 filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
 ,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);//goshe rast balla
-			
+
 filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
 ,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);//goshe chap balla
-		
+
 filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(PI+tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
 ,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(PI+tank[i].get_angle()/180.0*3.1415-atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);// goshe chap payin
-			
+
 filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*cos(PI+tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2)))
 ,tank[i].get_Yposition_center()-sqrt(pow((tankScreen[i]->h/2),2)+pow((tankScreen[i]->w/2),2))*sin(PI+tank[i].get_angle()/180.0*3.1415+atan2((tankScreen[i]->w/2),(tankScreen[i]->h/2))),10,255,0,0,255);// goshe rast payin
 
@@ -465,8 +475,8 @@ filledCircleRGBA(SCREEN,tank[i].get_Xposition_center()+sqrt(pow((tankScreen[i]->
 		SDL_FreeSurface(SCREEN);
 
 
-		
-	
+
+
 	}
 return 0;
 }
@@ -485,7 +495,7 @@ int randomMap(int max_numbers_of_map,int mapNum)
 }
 
 void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_mouse_right_click_Yposition,*/int i)
-{			
+{
 	if (i==0)
 	    //If a key was pressed
    			 	if( event.type == SDL_KEYDOWN )//in ha rokh dad hastand halat nistand
@@ -497,7 +507,7 @@ void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_m
             			{
             				tank[i].set_flag_UP(true);break;
             			}
-            			     					
+
       					case SDLK_DOWN:
        					{
       				    	tank[i].set_flag_DOWN(true);break;
@@ -512,7 +522,7 @@ void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_m
             			case SDLK_RIGHT:
             			{
                 			tank[i].set_omega(-1);break;
-            			} 
+            			}
       				}
     			}
     //If a key was released
@@ -525,9 +535,9 @@ void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_m
             			{
             				tank[i].set_flag_UP(false);break;
             			}
-            			
+
             			case SDLK_DOWN:
-            			{	
+            			{
             				tank[i].set_flag_DOWN(false);break;
             			}
             //for determining angle
@@ -551,7 +561,7 @@ void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_m
             			{
             				tank[i].set_flag_UP(true);break;
             			}
-            			     					
+
       					case SDLK_s:
        					{
       				    	tank[i].set_flag_DOWN(true);break;
@@ -565,7 +575,7 @@ void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_m
             			case SDLK_d:
             			{
                 			tank[i].set_omega(-1);break;
-            			} 
+            			}
       				}
     			}
     //If a key was released
@@ -578,9 +588,9 @@ void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_m
             			{
             				tank[i].set_flag_UP(false);break;
             			}
-            			
+
             			case SDLK_s:
-            			{	
+            			{
             				tank[i].set_flag_DOWN(false);break;
             			}
             //for determining angle
@@ -610,14 +620,14 @@ void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_m
     			tank[i].set_flag_UP(true);
 
     		}break;
-    		
+
 
     		/*case SDL_BUTTON_LEFT:
     		{
 				shelik
     		}*/
-			//}    
-    	//}	
+			//}
+    	//}
 }
 
 
@@ -703,7 +713,7 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 			i=0;
 		}
 
-		
+
 		if (flag_show_playgame_and_setting==false)
 		{
 			for (; i<20 ; i++)
@@ -767,7 +777,7 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 				}
 			}
 		}
-		
+
 		//filledCircleRGBA(SCREEN,playgame_xpos+playgame->w,playgame_ypos,100,0,0,0,255);
 		if (flag_show_playgame_and_setting==true)
 		{
