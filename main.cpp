@@ -50,10 +50,14 @@ class Tank
 		void set_omega(int i);
 		void set_veapon_kind(int i);
 
+        void get_tankScreen_width(int i);
+		void get_tankScreen_height(int i);
 		bool get_flag_UP();
 		bool get_flag_DOWN();
 		int get_Xposition_center();
 		int get_Yposition_center();
+		int get_tankScreen_width();
+        int get_tankScreen_height();
 		int get_health();
 		int get_Xposition();
 		int get_Yposition();
@@ -126,7 +130,7 @@ void Tank::set_critical_dots(SDL_Surface *SCREEN)
 		critical_dot[3][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height*2)));//y
 
 		critical_dot[6][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*cos(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height*2)));//x   7
-		critical_dot[6][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height*2)));//
+		critical_dot[6][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height*2)));//y
 
 		critical_dot[8][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*cos(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height*2)));//x   9
         critical_dot[8][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height*2)));//y
@@ -236,6 +240,14 @@ bool Tank::get_flag_DOWN()
 {
 	return(flag_DOWN);
 }
+int Tank::get_tankScreen_width()
+{
+    return tankScreen_width;
+}
+int Tank::get_tankScreen_height()
+{
+    return tankScreen_height;
+}
 int Tank::get_Xposition_center()
 {
 	return(Xposition_center);
@@ -286,12 +298,12 @@ void Tank::move(int i)
 	if (i==1)
 	{
 		Xposition+=get_Xspeed();
-		Yposition+=get_Yspeed();		
+		Yposition+=get_Yspeed();
 	}
 	else if(i==-1)
 	{
 		Xposition-=get_Xspeed();
-		Yposition-=get_Yspeed();		
+		Yposition-=get_Yspeed();
 	}
 
 }
@@ -317,6 +329,7 @@ class Bullet
     	void set_Yspeed(int i);
        	void set_flag_exist(bool i);
        	void set_angle(int i);
+       	void move();
        	int get_Xposition();
        	int get_Yposition();
        	int get_speed();
@@ -325,6 +338,13 @@ class Bullet
        	int get_angle();
        	bool get_flag_exist();
 };
+
+        void Bullet::move()
+        {
+            Xposition+=Xspeed;
+            Yposition+=Yspeed;
+        }
+
 		void Bullet::set_Xposition(int i)
 		{
 			Xposition=i;
@@ -342,7 +362,7 @@ class Bullet
 			speed=i;
 		}
 		void Bullet::set_Xspeed(int i)
-		{	
+		{
 			if (i==1)
 			{
 				Xspeed=(float)get_speed()*cos((float)get_angle()*PI/180.0);
@@ -357,7 +377,7 @@ class Bullet
 		{
 			if (i==1)
 			{
-				Yspeed=(float)get_speed()*sin((float)get_angle()*PI/180.0);
+				Yspeed=(float)(-1)*get_speed()*sin((float)get_angle()*PI/180.0);
 			}
 			else if (i==0)
 			{
@@ -401,8 +421,10 @@ class Bullet
 //                     function headers                                  //
 //////////////////////////////////////////////////////////////////////////
 int randomMap(int max_numbers_of_map,int mapNum);
-void handle_event(Tank*tank,/*int &last_mouse_right_click_Xposition,int &last_mouse_right_click_Yposition,*/int i);
+void handle_event(Tank*tank,Bullet *bullet,/*int &last_mouse_right_click_Xposition,int &last_mouse_right_click_Yposition,*/int i);
 void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event);
+void shift_bullets(Bullet *bullet);
+void shoot(Tank *tank,Bullet *bullet , int i);
 ////////////////////////////////////////////////////////////////////////////
 //                      global variables                                 //
 ///////////////////////////////////////////////////////////////////////////
@@ -458,7 +480,7 @@ int main(){
 		tank[i].set_Xposition_center(tankScreen[i]->w/2+tank[i].get_Xposition());
 		tank[i].set_Yposition_center(tankScreen[i]->h/2+tank[i].get_Yposition());
 		tank[i].set_health(5);
-		tank[i].set_speed(9);
+		tank[i].set_speed(8);
 		tank[i].set_angle(90);
 		tank[i].set_omega(0);
 		tank[i].set_Xspeed(0);
@@ -467,11 +489,23 @@ int main(){
 		tank[i].set_tankScreen_width(tankScreen[i]->w);
 		tank[i].set_tankScreen_height(tankScreen[i]->h);
 	}
-	
+
 	///////////////////////////////// Bullet ////////////////////////////////////////////////////
-	Bullet *bullet_on=new Bullet[40];
-	Bullet *bullet_off=new Bullet[40];
-	/////////////////////////////////////////////////////////////////////////////////////////
+	Bullet *bullet=new Bullet[41];
+
+	for(int i=0 ; i<40 ; i++)  // initializing...
+	{
+        bullet[i].set_Xposition(0);
+        bullet[i].set_Yposition(0);
+        bullet[i].set_flag_exist(false);
+        bullet[i].set_angle(0);
+        bullet[i].set_speed(12);
+        bullet[i].set_Xspeed(0);
+        bullet[i].set_Yspeed(0);
+
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////
 
 	bool Continue=true;
 	SDL_Rect offset;
@@ -491,7 +525,7 @@ int main(){
 			{
 				for (int i=0 ; i<numbers_of_player_in_game ; i++)
 				{
-					handle_event(tank,/*last_mouse_right_click_Xposition,last_mouse_right_click_Yposition,*/i);
+					handle_event(tank,bullet,/*last_mouse_right_click_Xposition,last_mouse_right_click_Yposition,*/i);
 				}
 			}
 		}
@@ -499,6 +533,7 @@ int main(){
 //////////////////////////////////////make move and rotation/////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////// Blitting Surface //////////////////////////////////////////////////////////////////
+
 		boxRGBA(SCREEN,0,0,frame_width,frame_height,0,0,0,255);
 		SDL_BlitSurface(mapScreen[map_number_in_game],NULL,SCREEN,NULL);
 		for(int i=0;i<numbers_of_player_in_game;i++)
@@ -541,6 +576,15 @@ int main(){
 		}
         for(int i=0;i<numbers_of_player_in_game;i++)
 			tank[i].move(1);
+
+        for(int i=40 ; i>=0 ; i--)
+        {
+            if(bullet[i].get_flag_exist()==true)
+            {
+                filledCircleRGBA(SCREEN,bullet[i].get_Xposition(),bullet[i].get_Yposition(),5,204,102,0,255);
+                bullet[i].move();
+            }
+        }
      /*   for(int i=0;i<numbers_of_player_in_game;i++)
 			tank[i].check_collision(SCREEN);
 */
@@ -549,15 +593,12 @@ int main(){
 		SDL_Flip(SCREEN);
 		SDL_Delay(20);
 		SDL_FreeSurface(SCREEN);
-
 	}
 return 0;
 }
 //////////////////////////////////////////////////////////////////////////
 
-
 //                             functions                                //
-
 
 //////////////////////////////////////////////////////////////////////////
 int randomMap(int max_numbers_of_map,int mapNum)
@@ -566,7 +607,26 @@ int randomMap(int max_numbers_of_map,int mapNum)
     if(p==mapNum) randomMap(max_numbers_of_map,mapNum);
     else return p;
 }
-void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_mouse_right_click_Yposition,*/int i)
+
+void shift_bullets(Bullet *bullet)
+{
+    bullet[41]=bullet[0];
+    for(int i=1 ; i<=41 ; i++)
+        bullet[i-1]=bullet[i];
+}
+
+void shoot(Tank *tank,Bullet *bullet , int i)
+{
+    bullet[0].set_Xposition(tank[i].get_Xposition_center() + (tank[i].get_tankScreen_height()/2)*cos(tank[i].get_angle()/180.0*3.1415));
+    bullet[0].set_Yposition(tank[i].get_Yposition_center() - (tank[i].get_tankScreen_height()/2)*sin(tank[i].get_angle()/180.0*3.1415));
+    bullet[0].set_angle(tank[i].get_angle());
+    bullet[0].set_Xspeed(1);
+    bullet[0].set_Yspeed(1);
+    bullet[0].set_flag_exist(true);
+    shift_bullets(bullet);
+}
+
+void handle_event(Tank *tank,Bullet *bullet,/*int &last_mouse_right_click_Xposition,int &last_mouse_right_click_Yposition,*/int i)
 {
 	if (i==0)
 	    //If a key was pressed
@@ -594,6 +654,10 @@ void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_m
             			case SDLK_RIGHT:
             			{
                 			tank[i].set_omega(-1);break;
+            			}
+            			case SDLK_SPACE:
+            			{
+                            shoot(tank,bullet,i);
             			}
       				}
     			}
