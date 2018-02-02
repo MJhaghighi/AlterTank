@@ -8,11 +8,8 @@
 #include <cmath>
 using namespace std;
 #define PI 3.1415
-
 /////////////////////////////////////////////////////////////////////////////
-
 //                             classes                                    //
-
 ///////////////////////////////////////////////////////////////////////////
 class Tank
 {
@@ -35,14 +32,10 @@ class Tank
 		int veapon_kind;//felan ye no tir
 
 	public:
-
-        friend class Bullet;
-
 		void set_tankScreen_width(int i);
 		void set_tankScreen_height(int i);
 		void set_flag_UP(bool i);
 		void set_flag_DOWN(bool i);
-
 		void check_collision(SDL_Surface *SCREEN);
 		void set_critical_dots(SDL_Surface *SCREEN);
 		void set_Xposition_center(int i);
@@ -71,33 +64,19 @@ class Tank
 		int get_omega();
 		int get_veapon_kind();
 		/////////////////////////////
-		void move();
+		void move(int i);
 		void turn_around();
 };
-
-class Bullet
-{
-    public:
-        Tank ob;
-        int x;
-        int y;
-        int V;
-        int Vx;
-        int Vy;
-        int theta=ob.angle;
-        bool flag_show=0;
-};
-
-
 void Tank::check_collision(SDL_Surface *SCREEN)
 {
+	bool flag=false;
 	Uint32 *pixels = (Uint32 *) SCREEN->pixels;
 	for(int j=0 ; j<=4 ; j++)
 	{
         for(int k=-2 ; k<=2 ; k++)
         {
 		Uint8 *color = (Uint8 *) & ( pixels[(critical_dot[j][1]+k) *SCREEN->w+(critical_dot[j][0]+k)] );
-		if(color[2]>240 && color[1]>240 && color[0]>240) flag_UP=0;
+		if(color[2]>240 && color[1]>240 && color[0]>240) flag=true; //move(-1);//flag_UP=0;//
 		}
 	}
 
@@ -106,15 +85,16 @@ void Tank::check_collision(SDL_Surface *SCREEN)
         for(int k=-2 ; k<=2 ; k++)
         {
 		Uint8 *color = (Uint8 *) & ( pixels[(critical_dot[j][1]+k) *SCREEN->w+(critical_dot[j][0]+k)] );
-		if(color[2]>240 && color[1]>240 && color[0]>240) flag_DOWN=0;
+		if(color[2]>240 && color[1]>240 && color[0]>240)flag_DOWN=0; //flag=true; //move(-1);
         }
 	}
-
+	if (flag==true)
+	{
+		move(-1);
+	}
 }
-
 void Tank::set_critical_dots(SDL_Surface *SCREEN)
 {
-
 		critical_dot[0][0]=get_Xposition_center()+sqrt(pow((tankScreen_width/2),2)+pow((tankScreen_height/2),2))*cos(get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//x   1
 		critical_dot[0][1]=get_Yposition_center()-sqrt(pow((tankScreen_width/2),2)+pow((tankScreen_height/2),2))*sin(get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//y
 
@@ -152,8 +132,6 @@ void Tank::set_critical_dots(SDL_Surface *SCREEN)
         critical_dot[8][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height*2)));//y
 
 }
-
-
 void Tank::set_tankScreen_width(int i)
 {
 	tankScreen_width=i;
@@ -303,31 +281,130 @@ int Tank::get_veapon_kind()
 	return(veapon_kind);
 }
 //////////////////////////////////////
-void Tank::move()
+void Tank::move(int i)
 {
-	Xposition+=get_Xspeed();
-	Yposition+=get_Yspeed();
+	if (i==1)
+	{
+		Xposition+=get_Xspeed();
+		Yposition+=get_Yspeed();		
+	}
+	else if(i==-1)
+	{
+		Xposition-=get_Xspeed();
+		Yposition-=get_Yspeed();		
+	}
+
 }
 void Tank::turn_around()
 {
 	angle+=get_omega();
 }
+class Bullet
+{
+    private:
+        int Xposition;
+        int Yposition;
+        int speed;
+        int Xspeed;
+        int Yspeed;
+        int angle;
+        bool flag_exist;
+    public:
+    	void set_Xposition(int i);
+    	void set_Yposition(int i);
+    	void set_speed(int i);
+    	void set_Xspeed(int i);
+    	void set_Yspeed(int i);
+       	void set_flag_exist(bool i);
+       	void set_angle(int i);
+       	int get_Xposition();
+       	int get_Yposition();
+       	int get_speed();
+       	int get_Xspeed();
+       	int get_Yspeed();
+       	int get_angle();
+       	bool get_flag_exist();
+};
+		void Bullet::set_Xposition(int i)
+		{
+			Xposition=i;
+		}
+		void Bullet::set_Yposition(int i)
+		{
+			Yposition=i;
+		}
+		void Bullet::set_angle(int i)
+		{
+			angle=i;
+		}
+		void Bullet::set_speed(int i)
+		{
+			speed=i;
+		}
+		void Bullet::set_Xspeed(int i)
+		{	
+			if (i==1)
+			{
+				Xspeed=(float)get_speed()*cos((float)get_angle()*PI/180.0);
+			}
+			else if (i==0)
+			{
+				Xspeed=0;
 
+			}
+		}
+		void Bullet::set_Yspeed(int i)
+		{
+			if (i==1)
+			{
+				Yspeed=(float)get_speed()*sin((float)get_angle()*PI/180.0);
+			}
+			else if (i==0)
+			{
+				Yspeed=0;
+			}
+		}
+		void Bullet::set_flag_exist(bool i)
+		{
+			flag_exist=i;
+		}
 
+       	int Bullet::get_Xposition()
+       	{
+       		return(Xposition);
+       	}
+       	int Bullet::get_Yposition()
+       	{
+       		return(Yposition);
+       	}
+       	int Bullet::get_speed()
+       	{
+       		return (speed);
+       	}
+       	int Bullet::get_Xspeed()
+       	{
+       		return(Xspeed);
+       	}
+       	int Bullet::get_Yspeed()
+       	{
+       		return(Yspeed);
+       	}
+       	bool Bullet::get_flag_exist()
+       	{
+       		return(flag_exist);
+       	}
+       	int Bullet::get_angle()
+       	{
+       		return(angle);
+       	}
 ///////////////////////////////////////////////////////////////////////////
-
 //                     function headers                                  //
-
 //////////////////////////////////////////////////////////////////////////
 int randomMap(int max_numbers_of_map,int mapNum);
 void handle_event(Tank*tank,/*int &last_mouse_right_click_Xposition,int &last_mouse_right_click_Yposition,*/int i);
 void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event);
-
-
 ////////////////////////////////////////////////////////////////////////////
-
 //                      global variables                                 //
-
 ///////////////////////////////////////////////////////////////////////////
 int frame_width=1800;
 int frame_height=900;
@@ -339,25 +416,18 @@ SDL_Surface** tankScreen = new SDL_Surface*[max_numbers_of_player];
 SDL_Surface** mapScreen = new SDL_Surface*[max_numbers_of_map];
 SDL_Surface** rotatedTank = new SDL_Surface*[max_numbers_of_player];
 ////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
 //                                       main                                            //
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 int main(){
+	srand((unsigned)time(NULL));
+	SDL_Init(SDL_INIT_EVERYTHING);
 	int last_mouse_right_click_Xposition=0;
 	int last_mouse_right_click_Yposition=0;
 	int mouse_Xposition;
 	int mouse_Yposition;
-	SDL_Init(SDL_INIT_EVERYTHING);
-	bool flag_UP[4]={false,false,false,false};
-	bool flag_DOWN[4]={false,false,false,false};
-	int numbers_of_player_in_game=4;
-	int map_number_in_game=1;
+	int numbers_of_player_in_game=2;
+	int map_number_in_game;
 	map_number_in_game=randomMap(max_numbers_of_map,map_number_in_game);
-	//cin >> numberOFplayerINgame;
-	srand((unsigned)time(NULL));
 	// intital game screen
 	SCREEN=SDL_SetVideoMode(frame_width,frame_height,32,SDL_SWSURFACE);
 	const char* tankAddress[4]={"tank1.png","tank2.png","tank3.png","tank4.png"};
@@ -370,8 +440,6 @@ int main(){
     	if (!(tankScreen[i]))
     			printf("%s\n",IMG_GetError());
 	}
-
-
 	//initial wall screen
 	for (int i=0 ; i<max_numbers_of_map/*4*/; i++)
 	{
@@ -386,7 +454,7 @@ int main(){
 		tank[i].set_flag_UP(false);
 		tank[i].set_flag_DOWN(false);
 		tank[i].set_Xposition(990);
-		tank[i].set_Yposition(390);
+		tank[i].set_Yposition(380);
 		tank[i].set_Xposition_center(tankScreen[i]->w/2+tank[i].get_Xposition());
 		tank[i].set_Yposition_center(tankScreen[i]->h/2+tank[i].get_Yposition());
 		tank[i].set_health(5);
@@ -399,12 +467,14 @@ int main(){
 		tank[i].set_tankScreen_width(tankScreen[i]->w);
 		tank[i].set_tankScreen_height(tankScreen[i]->h);
 	}
-	/////////////////////////////////////////////////////////////////////////////////////////
+	
+	///////////////////////////////// Bullet ////////////////////////////////////////////////////
+	Bullet *bullet_on=new Bullet[40];
+	Bullet *bullet_off=new Bullet[40];
 	/////////////////////////////////////////////////////////////////////////////////////////
 
 	bool Continue=true;
 	SDL_Rect offset;
-
 ////////////////////////////////menu/////////////////////////////////////
 	menu(SCREEN,numbers_of_player_in_game,event);
 	while (Continue)
@@ -427,10 +497,6 @@ int main(){
 		}
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////make move and rotation/////////////////////////////////////////////////////////
-
-
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////// Blitting Surface //////////////////////////////////////////////////////////////////
 		boxRGBA(SCREEN,0,0,frame_width,frame_height,0,0,0,255);
@@ -473,15 +539,11 @@ int main(){
 			}
 
 		}
-
-
         for(int i=0;i<numbers_of_player_in_game;i++)
-			tank[i].move();
-
-
-        for(int i=0;i<numbers_of_player_in_game;i++)
+			tank[i].move(1);
+     /*   for(int i=0;i<numbers_of_player_in_game;i++)
 			tank[i].check_collision(SCREEN);
-
+*/
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// go to next frame //////////////////////////////////////////////////////////////////////
 		SDL_Flip(SCREEN);
@@ -504,7 +566,6 @@ int randomMap(int max_numbers_of_map,int mapNum)
     if(p==mapNum) randomMap(max_numbers_of_map,mapNum);
     else return p;
 }
-
 void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_mouse_right_click_Yposition,*/int i)
 {
 	if (i==0)
@@ -640,16 +701,10 @@ void handle_event(Tank *tank,/*int &last_mouse_right_click_Xposition,int &last_m
 			//}
     	//}
 }
-
-
-
-
-
 void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 {
 	int mouse_xpos=0;
 	int mouse_ypos=0;
-	//SDL_Surface* SCREEN=SDL_SetVideoMode(frame_width,frame_height,32,SDL_SWSURFACE);
 	SDL_Surface* setting=IMG_Load("setting.png");
 	SDL_Surface* playgame=IMG_Load("playgame.png");
 	SDL_Surface* singleplayer=IMG_Load("singleplayer.png");
@@ -657,47 +712,40 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 	SDL_Surface* threeplayer=IMG_Load("threeplayer.png");
 	SDL_Surface* fourplayer=IMG_Load("fourplayer.png");
 	bool flag_show_playgame_and_setting=true;
-
 	int setting_xpos=600;
 	int setting_ypos=550;
 	SDL_Rect setting_offset;
 	setting_offset.x=setting_xpos;
 	setting_offset.y=setting_ypos;
-
 	int playgame_xpos=600;
 	int playgame_ypos=150;
 	SDL_Rect playgame_offset;
 	playgame_offset.x=playgame_xpos;
 	playgame_offset.y=playgame_ypos;
-
 	int singleplayer_xpos=600;
 	int singleplayer_ypos=30;
 	//int singleplayer_final_ypos=30;
 	SDL_Rect singleplayer_offset;
 	singleplayer_offset.x=singleplayer_xpos;
 	singleplayer_offset.y=singleplayer_ypos;
-
 	int twoplayer_xpos=600;
 	int twoplayer_ypos=30;//240
 	int twoplayer_final_ypos=240;
 	SDL_Rect twoplayer_offset;
 	twoplayer_offset.x=twoplayer_xpos;
 	twoplayer_offset.y=twoplayer_ypos;
-
 	int threeplayer_xpos=600;
 	int threeplayer_ypos=30;//450
 	int threeplayer_final_ypos=450;
 	SDL_Rect threeplayer_offset;
 	threeplayer_offset.x=threeplayer_xpos;
 	threeplayer_offset.y=threeplayer_ypos;
-
 	int fourplayer_xpos=600;
 	int fourplayer_ypos=30;//660
 	int fourplayer_final_ypos=660;
 	SDL_Rect fourplayer_offset;
 	fourplayer_offset.x=fourplayer_xpos;
 	fourplayer_offset.y=fourplayer_ypos;
-
 	bool quit=true;
 	int i=0;
 	while(quit==true)
@@ -709,10 +757,8 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 			{
 				exit(0);
 			}
-
 		mouse_xpos=event.motion.x;
 		mouse_ypos=event.motion.y;
-
 		if (mouse_xpos>playgame_xpos && mouse_xpos<playgame_xpos+playgame->w &&
 			mouse_ypos>playgame_ypos && mouse_ypos<playgame_ypos+playgame->h)
 		{
@@ -723,8 +769,6 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 			flag_show_playgame_and_setting=true;
 			i=0;
 		}
-
-
 		if (flag_show_playgame_and_setting==false)
 		{
 			for (; i<20 ; i++)
@@ -740,7 +784,6 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 				SDL_Flip(SCREEN);
 			}
 		}
-
 		if(i==20)
 		{
 				SDL_BlitSurface(singleplayer,NULL,SCREEN,&singleplayer_offset);
@@ -788,15 +831,15 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 				}
 			}
 		}
-
-		//filledCircleRGBA(SCREEN,playgame_xpos+playgame->w,playgame_ypos,100,0,0,0,255);
 		if (flag_show_playgame_and_setting==true)
 		{
 			SDL_BlitSurface(setting,NULL,SCREEN,&setting_offset);
 			SDL_BlitSurface(playgame,NULL,SCREEN,&playgame_offset);
 		}
 		SDL_Flip(SCREEN);
-		//SDL_Delay(2000);
 	}
 	return ;
 }
+
+
+
