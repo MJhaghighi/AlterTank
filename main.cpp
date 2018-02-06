@@ -825,7 +825,7 @@ class Bullet
 int dictance(int x1 ,int y1 ,int x2,int y2);
 int randomMap(int max_numbers_of_map,int mapNum);
 //void handle_move_event(Tank*tank,int i);
-void handle_move_event(Tank *tank,int numbers_of_player_in_game);
+void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game);
 void handle_fire_event(Tank *tank,Bullet *bullet ,int numbers_of_player_in_game );
 
 void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event);
@@ -853,7 +853,12 @@ SDL_Surface** rotatedTankBG = new SDL_Surface*[max_numbers_of_player];
 SDL_Surface** tankScreenBG = new SDL_Surface*[max_numbers_of_player];
 SDL_Surface** chopperScreen = new SDL_Surface*[4];
 SDL_Surface** rotatedChopper = new SDL_Surface*[4];
-SDL_Surface *heartScreen;
+SDL_Surface** chopperShScreen = new SDL_Surface*[4];
+SDL_Surface** rotatedShadow = new SDL_Surface*[4];
+SDL_Surface *heartScreen=new SDL_Surface;
+
+SDL_Joystick *stick1=NULL;
+SDL_Joystick *stick2=NULL;
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //                                       main                                            //
@@ -864,6 +869,7 @@ int main()
 	srand((unsigned)time(NULL));
 	SDL_Init(SDL_INIT_EVERYTHING);
 	TTF_Init();
+	SDL_INIT_JOYSTICK;
 	TTF_Font *font = TTF_OpenFont("font.ttf",18); // defining & loading font
 	SDL_Color font_color={0,255,127};  // font color
 	int last_mouse_right_click_Xposition=0;
@@ -874,14 +880,23 @@ int main()
 	int map_number_in_game;
 	map_number_in_game=randomMap(max_numbers_of_map,map_number_in_game);
 
+        cout<<SDL_NumJoysticks()<<endl;
+        stick1=SDL_JoystickOpen(0);
+        stick2=SDL_JoystickOpen(1);
+        cout<<SDL_JoystickOpened(0)<<endl<<SDL_JoystickOpened(1)<<endl;
+
 	SCREEN=SDL_SetVideoMode(frame_width,frame_height,32,SDL_SWSURFACE);
 	const char* tankAddress[4]={"tank1.png","tank2.png","tank3.png","tank4.png"};
 	const char* mapAddress[4]={"map1.png","map2.png","map3.png","map4.png"};
 	const char* tankBGAddress[4]={"tank1z.png","tank2z.png","tank3z.png","tank4z.png"};
 	const char* sparkAddress[4]={"spark1.png","spark2.png","spark3.png","spark4.png"};
     const char* chopperAddress[4]={"hele1.png","hele2.png","hele3.png","hele4.png"};
+    const char* chopper_shadowAddress[4]={"helesh1.png","helesh2.png","helesh3.png","helesh4.png"};
+    const char* heartAddress={"heart.png"};
+
     int spark_number=0;
-    heartScreen=IMG_Load("heart.png");
+    int chopper_number=0;
+    heartScreen=IMG_Load(heartAddress);
 
 	for (int i=0 ; i<max_numbers_of_player; i++)
 	{
@@ -899,6 +914,16 @@ int main()
         if(!(rotatedChopper[i]))
     			printf("%s\n",IMG_GetError());
 	}
+
+    for(int i=0 ; i<4 ; i++)
+	{
+        chopperShScreen[i]=NULL;
+        chopperShScreen[i]=IMG_Load(chopper_shadowAddress[i]);
+        rotatedShadow[i]=rotozoomSurface(chopperShScreen[i],0,1.0,0);
+        if(!(chopperShScreen[i]))
+    			printf("%s\n",IMG_GetError());
+	}
+
 
 	for(int i=0 ; i<4 ; i++)
 	{
@@ -980,12 +1005,13 @@ int main()
     }
 
     Chopper chopper;
-    chopper.set_Xposition(900);
+    chopper.random_position();
+    /*chopper.set_Xposition(900);
     chopper.set_Yposition(500);
     chopper.set_angle(90);
     chopper.set_speed(5);
     chopper.set_Xspeed(1);
-    chopper.set_Yspeed(1);
+    chopper.set_Yspeed(1);*/
 
     SDL_Rect chopper_offset;
     SDL_Rect heart_offset[4];
@@ -1008,7 +1034,7 @@ int main()
 				{
 					//for(int i=0 ; i<numbers_of_player_in_game ; i++)
 						//handle_move_event(tank,i);
-                    handle_move_event(tank,numbers_of_player_in_game);
+                    handle_move_event(tank,bullet,numbers_of_player_in_game);
                     handle_fire_event(tank,bullet,numbers_of_player_in_game);
 				}
 			}
@@ -1019,7 +1045,7 @@ int main()
                 if(tank[i].get_health()<=0) tank[i].set_flag_exist(false);
             }
 
-			boxRGBA(SCREEN,0,0,frame_width,frame_height,0,0,0,255);
+			boxRGBA(SCREEN,0,0,frame_width,frame_height,100,100,100,255);
 /*H*/
 
 			//set tank speed
@@ -1171,8 +1197,6 @@ int main()
         	for(int i=0;i<numbers_of_player_in_game;i++)
 				tank[i].check_collision(SCREEN);
 
-
-
         	// check colision of bullets with walls
         	for(int i=39 ; i>=0 ; i--)
        		{
@@ -1183,11 +1207,22 @@ int main()
        		}
 
        		chopper.move();
+       		if(chopper_number>12) chopper_number=0;
+
+       		SDL_FreeSurface(rotatedShadow[chopper_number%4]);
+       		SDL_FreeSurface(rotatedChopper[chopper_number%4]);
+
+       		chopper_number++;
        		chopper_offset.x=chopper.get_Xposition();
        		chopper_offset.y=chopper.get_Yposition();
-       		SDL_FreeSurface(rotatedChopper[0]);
-       		rotatedChopper[0]=rotozoomSurface(chopperScreen[0],chopper.get_angle()-90,2.5,0);
-       		SDL_BlitSurface(rotatedChopper[0],NULL,SCREEN,&chopper_offset);
+       		chopper_offset.y+=100;
+
+       		rotatedShadow[chopper_number%4]=rotozoomSurface(chopperShScreen[chopper_number%4],chopper.get_angle()-90,1.5,0);
+       		rotatedChopper[chopper_number%4]=rotozoomSurface(chopperScreen[chopper_number%4],chopper.get_angle()-90,2,0);
+
+       		SDL_BlitSurface(rotatedShadow[chopper_number%4],NULL,SCREEN,&chopper_offset);
+       		chopper_offset.y=chopper.get_Yposition();
+       		SDL_BlitSurface(rotatedChopper[chopper_number%4],NULL,SCREEN,&chopper_offset);
 
         int time=cl.tick();
 		SDL_Flip(SCREEN);
@@ -1316,7 +1351,7 @@ int dictance(int x1 ,int y1 ,int x2,int y2)
 }
 
 
-void handle_move_event(Tank *tank,int numbers_of_player_in_game)
+void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game)
 {
 
 	if (numbers_of_player_in_game>=1)
@@ -1390,11 +1425,11 @@ void handle_move_event(Tank *tank,int numbers_of_player_in_game)
 	            //for determining angle
             	case SDLK_a:
             	{
-            		tank[1].set_omega(1);break;
+            		tank[1].set_omega(1); break;
             	}
             	case SDLK_d:
             	{
-                	tank[1].set_omega(-1);break;
+                	tank[1].set_omega(-1); break;
             	}
       		}
     	}
@@ -1410,46 +1445,170 @@ void handle_move_event(Tank *tank,int numbers_of_player_in_game)
             	}
             	case SDLK_s:
             	{
-            		tank[1].set_flag_DOWN(false);break;
+            		tank[1].set_flag_DOWN(false); break;
             	}
             //for determining angle
             	case SDLK_a:
             	{
-            		tank[1].set_omega(0);break;
+            		tank[1].set_omega(0); break;
             	}
             	case SDLK_d:
             	{
-            		tank[1].set_omega(0);break;
+            		tank[1].set_omega(0); break;
             	}
        		}
-
 		}
 	}
 
-	if(numbers_of_player_in_game>=3)
-	{
-        SDL_Joystick *stick = NULL;
-        stick=SDL_JoystickOpen(0);
-        if(event.type==SDL_JOYAXISMOTION)
+    if(numbers_of_player_in_game>=3)
+    {
+        if(event.type == SDL_JOYAXISMOTION)
         {
-
-            if(event.jaxis.which==0)
+            //If joystick 0 has moved
+            if( event.jaxis.which == 0 )
             {
-
-                if(event.jaxis.axis==0)
+                //If the Y axis changed
+                if( event.jaxis.axis == 1 )
                 {
-                    if( (event.jaxis.value>-8000) && (event.jaxis.value<8000) )
-                        tank[2].set_Xspeed(0);
-
-                    else tank[2].set_Xspeed(1);
-                }
-
-                else if(event.jaxis.axis==1)
+                    //If the Y axis is neutral
+                    if( ( event.jaxis.value > -8000 ) && ( event.jaxis.value < 8000 ) )
                     {
-                        if((event.jaxis.value>-8000) && (event.jaxis.value<8000))
-                             tank[2].set_Yspeed(0);
-                        else tank[2].set_Yspeed(1);
+                        tank[2].set_flag_UP(false);
+                        tank[2].set_flag_DOWN(false);
                     }
+                    //If not
+                    else
+                    {
+                        //Adjust the velocity
+                        if( event.jaxis.value < 0 )
+                        {
+                            tank[2].set_flag_UP(true);
+                        }
+                        else
+                        {
+                            tank[2].set_flag_DOWN(true);
+                        }
+                    }
+                }
+            }
+
+            else if(event.jaxis.which==1)
+            {
+                //If the Y axis changed
+                if(event.jaxis.axis==1)
+                {
+                    //If the Y axis is neutral
+                    if( (event.jaxis.value>-8000) && (event.jaxis.value<8000) )
+                    {
+                        tank[3].set_flag_UP(false);
+                        tank[3].set_flag_DOWN(false);
+                    }
+                    //If not
+                    else
+                    {
+                        //Adjust the velocity
+                        if( event.jaxis.value < 0 )
+                        {
+                            tank[3].set_flag_UP(true);
+                        }
+                        else
+                        {
+                            tank[3].set_flag_DOWN(true);
+                        }
+                    }
+                }
+            }
+        }
+
+        if(event.type==SDL_JOYBUTTONDOWN)
+        {
+            if(event.jbutton.which==0)
+            switch(event.jbutton.button)
+            {
+                case 4:
+                    tank[2].set_omega(1); break;
+
+                case 5:
+                    tank[2].set_omega(-1); break;
+
+                case 3:
+                    {
+                        switch(tank[2].get_weapon_kind())
+                        {
+                            case 1:
+                            {
+                                if(tank[2].get_bulletNum()>0)
+                                {
+                                    shoot(tank,bullet,2);
+                                    tank[2].set_bulletNum(tank[2].get_bulletNum()-1);
+                                }
+                            } break;
+                            case 2:
+                            {
+                                shoot2(tank,numbers_of_player_in_game,2);
+                            } break;
+                            case 3:
+                            {
+                                //shoot3
+                            } break;
+                        }
+                    }
+            }
+
+            else if(event.jbutton.which==1)
+            switch(event.jbutton.button)
+            {
+                case 4:
+                    tank[3].set_omega(1); break;
+
+                case 5:
+                    tank[3].set_omega(-1); break;
+
+                case 3:
+                    {
+                        switch(tank[3].get_weapon_kind())
+                        {
+                            case 1:
+                            {
+                                if(tank[3].get_bulletNum()>0)
+                                {
+                                    shoot(tank,bullet,3);
+                                    tank[3].set_bulletNum(tank[3].get_bulletNum()-1);
+                                }
+                            } break;
+                            case 2:
+                            {
+                                shoot2(tank,numbers_of_player_in_game,3);
+                            } break;
+                            case 3:
+                            {
+                                //shoot3
+                            } break;
+                        }
+                    }
+            }
+        }
+
+        if(event.type==SDL_JOYBUTTONUP)
+        {
+            if(event.jbutton.which==0)
+            switch(event.jbutton.button)
+            {
+                case 4:
+                    tank[2].set_omega(0); break;
+
+                case 5:
+                    tank[2].set_omega(0); break;
+            }
+
+            else if(event.jbutton.which==0)
+            switch(event.jbutton.button)
+            {
+                case 4:
+                    tank[3].set_omega(0); break;
+
+                case 5:
+                    tank[3].set_omega(0); break;
             }
         }
     }
