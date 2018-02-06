@@ -6,11 +6,136 @@
 #include "global_variables.h"
 #include <iostream>
 #include <cmath>
+#include <SDL/SDL_ttf.h>
 using namespace std;
 #define PI 3.1415
 /////////////////////////////////////////////////////////////////////////////
 //                             classes                                    //
 ///////////////////////////////////////////////////////////////////////////
+	class Chopper
+       	{
+       	private:
+       		int Xposition;
+       		int Yposition;
+       		int speed;
+       		int Xspeed;
+       		int Yspeed;
+       		int angle;
+       	public:
+       		void set_Xposition(int i)
+       		{
+       			Xposition=i;
+       		}
+       		void set_Yposition(int i)
+       		{
+       			Yposition=i;
+       		}
+       		void set_angle(int i)
+       		{
+       			angle=i;
+       		}
+       		void set_speed(int i)
+       		{
+       			speed=i;
+       		}
+       		void set_Xspeed(int i)
+       		{
+       			if (i==1)
+       			{
+       				Xspeed=speed*cos(angle/180.0*3.1415);
+       			}
+       			if (i==0)
+       			{
+       				Xspeed=0;
+       			}
+       		}
+       		void set_Yspeed(int i)
+       		{
+       			if (i==1)
+       			{
+       				Yspeed=(-1)*speed*sin(angle/180.0*3.1415);
+       			}
+       			if (i==0)
+       			{
+       				Yspeed=0;
+       			}
+       		}
+       		int  get_Xposition()
+       		{
+       			return(Xposition);
+       		}
+       		int get_Yposition()
+       		{
+       			return(Yposition);
+       		}
+       		int get_angle()
+       		{
+       			return(angle);
+       		}
+       		int get_Xspeed()
+       		{
+       			return(Xspeed);
+       		}
+       		int get_Yspeed()
+       		{
+       			return(Yspeed);
+       		}
+       		void move()
+       		{
+       			Xposition+=Xspeed;
+       			Yposition+=Yspeed;
+       		}
+
+       		void random_position()
+       		{
+       			int i=(int)(rand()%80)/20;
+       			if (i==0)
+       			{
+       				set_Xposition(0);
+       				set_Yposition(50+rand()%800);// bolandi safhe
+       				int j=(rand()%100)/50;
+       				if (j==0) j=(-1);
+       				set_angle(j*(rand()%70));
+       			}
+       			else if (i==1)
+       			{
+       				set_Yposition(0);
+       				set_Xposition(100+rand()%1600);
+       				set_angle(190+rand()%160);
+       			}
+       			else if (i==2)
+       			{
+       				set_Xposition(1800);
+       				set_Yposition(50+rand()%800);
+       				set_angle(100+rand()%160);
+       			}
+       			else if(i==3)
+       			{
+       				set_Yposition(900);
+       				set_Xposition(100+rand()%1600);
+       				set_angle(10+rand()%160);
+       			}
+       				set_speed(10);
+       				set_Xspeed(1);
+       				set_Yspeed(1);
+       		}
+       	};
+
+
+struct Clock
+{
+    uint32_t last_tick_time=0;
+    uint32_t delta=0;
+
+    int tick()
+    {
+        uint32_t tick_time = SDL_GetTicks();
+        delta = tick_time - last_tick_time;
+        last_tick_time = tick_time;
+        return delta;
+    }
+}cl;
+
 class Tank
 {
 	private:
@@ -33,8 +158,10 @@ class Tank
 		int Yspeed;
 		int angle;
 		int omega;//change speed of angle
-		int veapon_kind;//felan ye no tir
+		int weapon_kind;//felan ye no tir
 		int variable_for_shoot2;
+		int bulletNum;
+		int score;
 	public:
         void set_R(int i);
         void set_G(int i);
@@ -57,8 +184,10 @@ class Tank
 		void set_Yspeed(int i);
 		void set_angle(int i);//degree
 		void set_omega(int i);
-		void set_veapon_kind(int i);
+		void set_weapon_kind(int i);
 		void set_variable_for_shoot2(int i);
+		void set_bulletNum(int i);
+		void set_score(int i);
 
         void get_tankScreen_width(int i);
 		void get_tankScreen_height(int i);
@@ -81,11 +210,23 @@ class Tank
 		int get_Yspeed();
 		int get_angle();
 		int get_omega();
-		int get_veapon_kind();
+		int get_weapon_kind();
+		int get_bulletNum();
+		int get_score();
 		/////////////////////////////
 		void move(int i);
 		void turn_around();
 };
+
+void Tank::set_score(int i)
+{
+    score=i;
+}
+
+void Tank::set_bulletNum(int i)
+{
+    bulletNum=i;
+}
 
 void Tank::set_R(int i)
 {
@@ -252,9 +393,9 @@ void Tank::set_angle(int i)
 {
 	angle=i;
 }
-void Tank::set_veapon_kind(int i)
+void Tank::set_weapon_kind(int i)
 {
-	veapon_kind=i;
+	weapon_kind=i;
 }
 void Tank::set_omega(int i)
 {
@@ -272,6 +413,16 @@ void Tank::set_omega(int i)
 	}
 }
 ////////////////////////////////////////
+int Tank::get_score()
+{
+    return score;
+}
+
+int Tank::get_bulletNum()
+{
+    return bulletNum;
+}
+
 int Tank::get_R()
 {
     return R;
@@ -351,9 +502,9 @@ int Tank::get_omega()
 {
 	return(omega);
 }
-int Tank::get_veapon_kind()
+int Tank::get_weapon_kind()
 {
-	return(veapon_kind);
+	return(weapon_kind);
 }
 //////////////////////////////////////
 void Tank::move(int i)
@@ -376,7 +527,6 @@ void Tank::turn_around()
 }
 
 
-
 class Bullet
 {
     private:
@@ -388,6 +538,8 @@ class Bullet
         int angle;
         int radius;
         bool flag_exist;
+        int startTime;
+        int existingTime;
     public:
     	void set_Xposition(int i);
     	void set_Yposition(int i);
@@ -400,6 +552,9 @@ class Bullet
        	void check_collision(SDL_Surface *SCREEN);
        	void collision_with_tank(SDL_Surface *SCREEN,Tank *tank,int i);
        	void set_radius(int i);
+       	void set_startTime(int i);
+       	void set_currentTime(int i);
+       	void set_existingTime(int i);
        	int get_Xposition();
        	int get_Yposition();
        	int get_speed();
@@ -407,9 +562,10 @@ class Bullet
        	int get_Yspeed();
        	int get_angle();
        	int get_radius();
+       	int get_startTime();
+       	int get_existingTime();
        	bool get_flag_exist();
 };
-
 
 		void Bullet::check_collision(SDL_Surface *SCREEN)
         {
@@ -613,6 +769,16 @@ class Bullet
             radius=i;
         }
 
+        void Bullet::set_startTime(int i)
+        {
+            startTime=i;
+        }
+        void Bullet::set_existingTime(int i)
+        {
+            existingTime=i;
+        }
+
+
        	int Bullet::get_Xposition()
        	{
        		return(Xposition);
@@ -645,6 +811,14 @@ class Bullet
        	{
        		return radius;
        	}
+       	int Bullet::get_startTime()
+       	{
+            return startTime;
+       	}
+       	int Bullet::get_existingTime()
+       	{
+            return existingTime;
+       	}
 ///////////////////////////////////////////////////////////////////////////
 //                     function headers                                  //
 //////////////////////////////////////////////////////////////////////////
@@ -658,12 +832,14 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event);
 void shift_bullets(Bullet *bullet);
 void shoot(Tank *tank,Bullet *bullet , int i);
 void shoot2(Tank *tank,int numbers_of_player_in_game,int k);
+void apply_surface(int x,int y,SDL_Surface* source,SDL_Surface* destination);
+char* NumToStr(int num);
 
 ////////////////////////////////////////////////////////////////////////////
-//                      global variables                                 //
+//                      global variables                                //
 ///////////////////////////////////////////////////////////////////////////
 int frame_width=1800;
-int frame_height=900;
+int frame_height=1020;
 int max_numbers_of_player=4;
 int max_numbers_of_map=4;
 SDL_Event event;
@@ -675,6 +851,9 @@ SDL_Surface** mapScreen = new SDL_Surface*[max_numbers_of_map];
 SDL_Surface** rotatedTank = new SDL_Surface*[max_numbers_of_player];
 SDL_Surface** rotatedTankBG = new SDL_Surface*[max_numbers_of_player];
 SDL_Surface** tankScreenBG = new SDL_Surface*[max_numbers_of_player];
+SDL_Surface** chopperScreen = new SDL_Surface*[4];
+SDL_Surface** rotatedChopper = new SDL_Surface*[4];
+SDL_Surface *heartScreen;
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 //                                       main                                            //
@@ -684,6 +863,9 @@ int main()
 {
 	srand((unsigned)time(NULL));
 	SDL_Init(SDL_INIT_EVERYTHING);
+	TTF_Init();
+	TTF_Font *font = TTF_OpenFont("font.ttf",18); // defining & loading font
+	SDL_Color font_color={0,255,127};  // font color
 	int last_mouse_right_click_Xposition=0;
 	int last_mouse_right_click_Yposition=0;
 	int mouse_Xposition;
@@ -697,7 +879,9 @@ int main()
 	const char* mapAddress[4]={"map1.png","map2.png","map3.png","map4.png"};
 	const char* tankBGAddress[4]={"tank1z.png","tank2z.png","tank3z.png","tank4z.png"};
 	const char* sparkAddress[4]={"spark1.png","spark2.png","spark3.png","spark4.png"};
+    const char* chopperAddress[4]={"hele1.png","hele2.png","hele3.png","hele4.png"};
     int spark_number=0;
+    heartScreen=IMG_Load("heart.png");
 
 	for (int i=0 ; i<max_numbers_of_player; i++)
 	{
@@ -710,7 +894,18 @@ int main()
         tankScreenBG[i]=NULL;
         tankScreenBG[i]=IMG_Load(tankBGAddress[i]);
         rotatedTankBG[i]=rotozoomSurface(tankScreenBG[i],/*angle*/0,/*zoom*/1.0,0);
-        if (!(tankScreenBG[i]))
+        if(!(tankScreenBG[i]))
+    			printf("%s\n",IMG_GetError());
+        if(!(rotatedChopper[i]))
+    			printf("%s\n",IMG_GetError());
+	}
+
+	for(int i=0 ; i<4 ; i++)
+	{
+        chopperScreen[i]=NULL;
+        chopperScreen[i]=IMG_Load(chopperAddress[i]);
+        rotatedChopper[i]=rotozoomSurface(chopperScreen[i],0,1.0,0);
+        if(!(chopperScreen[i]))
     			printf("%s\n",IMG_GetError());
 	}
 
@@ -742,15 +937,17 @@ int main()
 		tank[i].set_Xposition_center(tankScreen[i]->w/2+tank[i].get_Xposition());
 		tank[i].set_Yposition_center(tankScreen[i]->h/2+tank[i].get_Yposition());
 		tank[i].set_health(10);
-		tank[i].set_speed(4);
+		tank[i].set_speed(6);
 		tank[i].set_angle(90);
 		tank[i].set_omega(0);
 		tank[i].set_Xspeed(0);
 		tank[i].set_Yspeed(0);
-		tank[i].set_veapon_kind(2);// 1-> is normal veapon
+		tank[i].set_weapon_kind(1);// 1-> is normal veapon
 		tank[i].set_tankScreen_width(tankScreen[i]->w);
 		tank[i].set_tankScreen_height(tankScreen[i]->h);
 		tank[i].set_variable_for_shoot2(20);
+		tank[i].set_bulletNum(10);
+		tank[i].set_score(0);
 	}
         tank[0].set_R(45); // setting RGB colors for the background of tanks
         tank[0].set_G(122);
@@ -768,8 +965,6 @@ int main()
         tank[3].set_G(69);
         tank[3].set_B(170);
 
-
-
 	Bullet *bullet=new Bullet[41];
 	for(int i=0 ; i<=40 ; i++)
 	{
@@ -777,13 +972,24 @@ int main()
         bullet[i].set_Yposition(0);
         bullet[i].set_flag_exist(false);
         bullet[i].set_angle(0);
-        bullet[i].set_speed(6);
+        bullet[i].set_speed(8);
         bullet[i].set_Xspeed(0);
         bullet[i].set_Yspeed(0);
         bullet[i].set_radius(5);
+        bullet[i].set_existingTime(7);
     }
 
+    Chopper chopper;
+    chopper.set_Xposition(900);
+    chopper.set_Yposition(500);
+    chopper.set_angle(90);
+    chopper.set_speed(5);
+    chopper.set_Xspeed(1);
+    chopper.set_Yspeed(1);
 
+    SDL_Rect chopper_offset;
+    SDL_Rect heart_offset[4];
+    SDL_Rect tankInfo_offset;
 	SDL_Rect spark_offset;
 	SDL_Rect offset;
 	SDL_Rect BG_offset;
@@ -849,9 +1055,11 @@ int main()
 			// bullets move
        		for(int i=39 ; i>=0 ; i--)
         	{
+                if((int)(SDL_GetTicks()/1000)-bullet[i].get_startTime()>=bullet[i].get_existingTime())
+                    bullet[i].set_flag_exist(false);
 /*T*/           if(bullet[i].get_flag_exist()==true)
             	{
-               		filledCircleRGBA(SCREEN,bullet[i].get_Xposition(),bullet[i].get_Yposition(),5,204,102,0,255);
+               		filledCircleRGBA(SCREEN,bullet[i].get_Xposition(),bullet[i].get_Yposition(),5,255,165,0,255);
                		bullet[i].move();
             	}
         	}
@@ -903,7 +1111,37 @@ int main()
                     //rotatedTank[i]=rotozoomSurface(tankScreen[i],tank[i].get_angle()-90,1.0,0);
                     SDL_BlitSurface(rotatedTank[i],NULL,SCREEN,&offset);
                     tank[i].set_critical_dots(SCREEN);
-                   // SDL_FreeSurface(rotatedTank[i]);
+                    //SDL_FreeSurface(rotatedTank[i]);
+
+                    //showing tank information under the map
+                    tankInfo_offset.x=225+i*450;
+                    tankInfo_offset.y=930;
+                    heart_offset[i].x=175+i*450;
+                    heart_offset[i].y=927;
+                    SDL_BlitSurface(tankScreen[i],NULL,SCREEN,&tankInfo_offset);
+
+                    //showing health
+                    SDL_Surface *message =TTF_RenderText_Solid(font,NumToStr(tank[i].get_health()),font_color);
+                    apply_surface(tankInfo_offset.x-25,tankInfo_offset.y,message,SCREEN);
+                    SDL_BlitSurface(heartScreen,NULL,SCREEN,&heart_offset[i]);
+
+                    //showing bullet number
+                    message =TTF_RenderText_Solid(font,NumToStr(tank[i].get_bulletNum()),font_color);
+                    filledCircleRGBA(SCREEN,tankInfo_offset.x-33,tankInfo_offset.y+61,5,255,165,0,255);
+                    apply_surface(tankInfo_offset.x-25,tankInfo_offset.y+50,message,SCREEN);
+
+                    //showing score
+                    message =TTF_RenderText_Solid(font,"Score =",font_color);
+                    apply_surface(tankInfo_offset.x+60,tankInfo_offset.y,message,SCREEN);
+                    message =TTF_RenderText_Solid(font,NumToStr(tank[i].get_score()),font_color);
+                    apply_surface(tankInfo_offset.x+122,tankInfo_offset.y,message,SCREEN);
+
+                    //showing weapon kind
+                    if(tank[i].get_weapon_kind()==1)
+                    message =TTF_RenderText_Solid(font,"Normal",font_color);
+                    else if(tank[i].get_weapon_kind()==2)
+                    message =TTF_RenderText_Solid(font,"EMP",font_color);
+                    apply_surface(tankInfo_offset.x+60,tankInfo_offset.y+50,message,SCREEN);
 				}
 			}
 
@@ -944,16 +1182,22 @@ int main()
            		}
        		}
 
-       		cout<<tank[1].get_health()<<endl;
+       		chopper.move();
+       		chopper_offset.x=chopper.get_Xposition();
+       		chopper_offset.y=chopper.get_Yposition();
+       		SDL_FreeSurface(rotatedChopper[0]);
+       		rotatedChopper[0]=rotozoomSurface(chopperScreen[0],chopper.get_angle()-90,2.5,0);
+       		SDL_BlitSurface(rotatedChopper[0],NULL,SCREEN,&chopper_offset);
 
+        int time=cl.tick();
 		SDL_Flip(SCREEN);
-		SDL_Delay(10);
+		if(time<10)
+		SDL_Delay(10-time);
+		else SDL_Delay(10);
 		SDL_FreeSurface(SCREEN);
 	}
 return 0;
 }
-
-
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -982,6 +1226,7 @@ void shoot(Tank *tank,Bullet *bullet , int i)
     bullet[0].set_Xspeed(1);
     bullet[0].set_Yspeed(1);
     bullet[0].set_flag_exist(true);
+    bullet[0].set_startTime((int)(SDL_GetTicks()/1000));
     shift_bullets(bullet);
 }
 
@@ -999,7 +1244,7 @@ void shoot2(Tank *tank,int numbers_of_player_in_game,int k)
 	}
 }
 
-void handle_fire_event(Tank *tank,Bullet *bullet ,int numbers_of_player_in_game )
+void handle_fire_event(Tank *tank,Bullet *bullet ,int numbers_of_player_in_game)
 {
 	if (event.type==SDL_KEYDOWN)
 	{
@@ -1010,11 +1255,15 @@ void handle_fire_event(Tank *tank,Bullet *bullet ,int numbers_of_player_in_game 
                 if(tank[0].get_flag_exist()==true)
 				if (numbers_of_player_in_game>=1)
 				{
-					switch(tank[0].get_veapon_kind())
+					switch(tank[0].get_weapon_kind())
 					{
 						case 1:
 						{
-							shoot(tank,bullet,0);
+                            if(tank[0].get_bulletNum()>0)
+                            {
+                                shoot(tank,bullet,0);
+                                tank[0].set_bulletNum(tank[0].get_bulletNum()-1);
+                            }
 						} break;
 						case 2:
 						{
@@ -1028,17 +1277,20 @@ void handle_fire_event(Tank *tank,Bullet *bullet ,int numbers_of_player_in_game 
 				}
 			} break;
 
-
 			case SDLK_q:
 			{
                 if(tank[1].get_flag_exist()==true)
 				if (numbers_of_player_in_game>=2)
 				{
-					switch(tank[1].get_veapon_kind())
+					switch(tank[1].get_weapon_kind())
 					{
 						case 1:
 						{
-							shoot(tank,bullet,1);
+							if(tank[1].get_bulletNum()>0)
+                            {
+                                shoot(tank,bullet,1);
+                                tank[1].set_bulletNum(tank[1].get_bulletNum()-1);
+                            }
 						} break;
 						case 2:
 						{
@@ -1173,142 +1425,58 @@ void handle_move_event(Tank *tank,int numbers_of_player_in_game)
 
 		}
 	}
+
+	if(numbers_of_player_in_game>=3)
+	{
+        SDL_Joystick *stick = NULL;
+        stick=SDL_JoystickOpen(0);
+        if(event.type==SDL_JOYAXISMOTION)
+        {
+
+            if(event.jaxis.which==0)
+            {
+
+                if(event.jaxis.axis==0)
+                {
+                    if( (event.jaxis.value>-8000) && (event.jaxis.value<8000) )
+                        tank[2].set_Xspeed(0);
+
+                    else tank[2].set_Xspeed(1);
+                }
+
+                else if(event.jaxis.axis==1)
+                    {
+                        if((event.jaxis.value>-8000) && (event.jaxis.value<8000))
+                             tank[2].set_Yspeed(0);
+                        else tank[2].set_Yspeed(1);
+                    }
+            }
+        }
+    }
 }
 
-/*if (i==0)
-	    //If a key was pressed
-   			 	if( event.type == SDL_KEYDOWN )//in ha rokh dad hastand halat nistand
-  				{
-        //Adjust the velocity
-      				switch( event.key.keysym.sym )
-     				{
-            			case SDLK_UP:
-            			{
-            				tank[i].set_flag_UP(true);break;
-            			}
+void apply_surface(int x,int y,SDL_Surface* source,SDL_Surface* destination)
+{
+    SDL_Rect offset;
+    offset.x=x;
+    offset.y=y;
 
-      					case SDLK_DOWN:
-       					{
-      				    	tank[i].set_flag_DOWN(true);break;
-      					}
+    SDL_BlitSurface(source,NULL,destination,&offset);
+}
 
-            //for determining angle
-            			case SDLK_LEFT:
-            			{
-            				tank[i].set_omega(1);break;
-
-            			}
-            			case SDLK_RIGHT:
-            			{
-                			tank[i].set_omega(-1);break;
-            			}
-            		}
-      			}
-    			//}
-    //If a key was released
-    			else if( event.type == SDL_KEYUP )
-    			{
-        //Adjust the velocit
-        			switch( event.key.keysym.sym )
-     			   {
-            			case SDLK_UP:
-            			{
-            				tank[i].set_flag_UP(false);break;
-            			}
-
-            			case SDLK_DOWN:
-            			{
-            				tank[i].set_flag_DOWN(false);break;
-            			}
-            //for determining angle
-            			case SDLK_LEFT:
-            			{
-            				tank[i].set_omega(0);break;
-            			}
-            			case SDLK_RIGHT:
-            			{
-            				tank[i].set_omega(0);break;
-            			}
-       				}
-    			}
-    if (i==1)
-    	if( event.type == SDL_KEYDOWN )//in ha rokh dad hastand halat nistand
-  				 {
-        //Adjust the velocity
-      				switch( event.key.keysym.sym )
-     				{
-            			case SDLK_w:
-            			{
-            				tank[i].set_flag_UP(true);break;
-            			}
-
-      					case SDLK_s:
-       					{
-      				    	tank[i].set_flag_DOWN(true);break;
-      					}
-
-            //for determining angle
-            			case SDLK_a:
-            			{
-            				tank[i].set_omega(1);break;
-            			}
-            			case SDLK_d:
-            			{
-                			tank[i].set_omega(-1);break;
-            			}
-      				}
-    			}
-    //If a key was released
-    			else if( event.type == SDL_KEYUP )
-    			{
-        //Adjust the velocit
-        			switch( event.key.keysym.sym )
-     			   {
-            			case SDLK_w:
-            			{
-            				tank[i].set_flag_UP(false);break;
-            			}
-
-            			case SDLK_s:
-            			{
-            				tank[i].set_flag_DOWN(false);break;
-            			}
-            //for determining angle
-            			case SDLK_a:
-            			{
-            				tank[i].set_omega(0);break;
-            			}
-            			case SDLK_d:
-            			{
-            				tank[i].set_omega(0);break;
-            			}
-       				}
-    			}*/
-/*
-	if (i==3)
-    	if (event.type == SDL_MOUSEBUTTONDOWN)//joy stick
-    	{	//cout << "OK1";
-
-    		switch(event.button.button)
-    		{
-    		case SDL_BUTTON_LEFT:
-    		{
-    			last_mouse_right_click_Yposition=event.button.y;
-    			last_mouse_right_click_Xposition=event.button.x;
-    			//cout<< "OK2";
-    			tank[i].set_angle(180*atan2( tank[i].get_Yposition_center() - last_mouse_right_click_Yposition  ,  last_mouse_right_click_Xposition - tank[i].get_Xposition_center() )/PI);
-    			tank[i].set_flag_UP(true);
-
-    		}break;
-
-
-    		/*case SDL_BUTTON_LEFT:
-    		{
-				shelik
-    		}*/
-			//}
-    	//}
-//}
+char* NumToStr(int num)  // for rectangle lives
+{
+    stringstream strs;
+    strs<<num;
+    string temp_str=strs.str();
+    char* finall = new char(temp_str.length()+1);
+    for(int i=0;i<temp_str.length();i++)
+    {
+        finall[i]=temp_str[i];
+    }
+    finall[temp_str.length()]='\0';
+    return finall;
+}
 
 void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 {
