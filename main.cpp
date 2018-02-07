@@ -86,7 +86,7 @@ using namespace std;
        			Yposition+=Yspeed;
        		}
 
-       		void random_position()
+       		void randomrandom_position()
        		{
        			int i=(int)(rand()%80)/20;
        			if (i==0)
@@ -213,6 +213,8 @@ class Tank
 		int get_weapon_kind();
 		int get_bulletNum();
 		int get_score();
+		int get_critical_dot(int i,int j);
+
 		/////////////////////////////
 		void move(int i);
 		void turn_around();
@@ -505,6 +507,10 @@ int Tank::get_omega()
 int Tank::get_weapon_kind()
 {
 	return(weapon_kind);
+}
+int Tank::get_critical_dot(int i,int j)
+{
+    return critical_dot[i][j];
 }
 //////////////////////////////////////
 void Tank::move(int i)
@@ -834,6 +840,7 @@ void shoot(Tank *tank,Bullet *bullet , int i);
 void shoot2(Tank *tank,int numbers_of_player_in_game,int k);
 void apply_surface(int x,int y,SDL_Surface* source,SDL_Surface* destination);
 char* NumToStr(int num);
+void random_position(SDL_Surface *SCREEN,Tank *tank,int i);
 
 ////////////////////////////////////////////////////////////////////////////
 //                      global variables                                //
@@ -883,7 +890,7 @@ int main()
         cout<<SDL_NumJoysticks()<<endl;
         stick1=SDL_JoystickOpen(0);
         stick2=SDL_JoystickOpen(1);
-        cout<<SDL_JoystickOpened(0)<<endl<<SDL_JoystickOpened(1)<<endl;
+        cout<<SDL_JoystickOpened(0)<<endl<<SDL_JoystickOpened(1)<<endl;//<<SDL_JoystickOpened(2)<<endl;
 
 	SCREEN=SDL_SetVideoMode(frame_width,frame_height,32,SDL_SWSURFACE);
 	const char* tankAddress[4]={"tank1.png","tank2.png","tank3.png","tank4.png"};
@@ -941,6 +948,9 @@ int main()
     			printf("%s\n",IMG_GetError());
 	}
 
+
+
+
 	for (int i=0 ; i<max_numbers_of_map/*4*/; i++)
 	{
 	    mapScreen[i]=IMG_Load(mapAddress[i]);
@@ -948,8 +958,7 @@ int main()
     			printf("%s\n",IMG_GetError());
 	}
 
-
-	menu(SCREEN,numbers_of_player_in_game,event);
+    menu(SCREEN,numbers_of_player_in_game,event);
 
 	Tank *tank=new Tank[4];
 	for (int i=0 ; i<numbers_of_player_in_game ; i++)
@@ -973,6 +982,7 @@ int main()
 		tank[i].set_variable_for_shoot2(20);
 		tank[i].set_bulletNum(10);
 		tank[i].set_score(0);
+		tank[i].set_critical_dots(SCREEN);
 	}
         tank[0].set_R(45); // setting RGB colors for the background of tanks
         tank[0].set_G(122);
@@ -1005,7 +1015,7 @@ int main()
     }
 
     Chopper chopper;
-    chopper.random_position();
+    chopper.randomrandom_position();
     /*chopper.set_Xposition(900);
     chopper.set_Yposition(500);
     chopper.set_angle(90);
@@ -1019,6 +1029,16 @@ int main()
 	SDL_Rect spark_offset;
 	SDL_Rect offset;
 	SDL_Rect BG_offset;
+
+
+
+    boxRGBA(SCREEN,0,0,frame_width,frame_height,0,0,0,255);
+    SDL_BlitSurface(mapScreen[map_number_in_game],NULL,SCREEN,NULL);
+
+	for(int i=0 ; i<numbers_of_player_in_game ; i++)
+        random_position(SCREEN,tank,i);
+
+    cout<<"before while true"<<endl;
 	bool Continue=true;
 	while (Continue)
 	{
@@ -1026,7 +1046,7 @@ int main()
 			if (SDL_PollEvent(&event))
 			{
 
-/*W*/				if(event.type==SDL_QUIT)
+/*W*/			if(event.type==SDL_QUIT)
 				{
 					Continue=false;
 				}
@@ -1045,7 +1065,64 @@ int main()
                 if(tank[i].get_health()<=0) tank[i].set_flag_exist(false);
             }
 
-			boxRGBA(SCREEN,0,0,frame_width,frame_height,100,100,100,255);
+			boxRGBA(SCREEN,0,0,frame_width,frame_height,0,0,0,255);
+
+
+
+
+			/*for(int i=0 ; i<numbers_of_player_in_game ; i++)
+            {
+                int x1,x2,x3,x4,y1,y2,y3,y4,x5,y5,x6,y6;
+
+                x1=tank[i].get_Xposition_center()+sqrt(pow((tank[i].get_tankScreen_height()/4),2)+pow((tank[i].get_tankScreen_width()/2),2))*cos(tank[i].get_angle()/180.0*3.1415-PI/2+atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2))) ;
+                y1=tank[i].get_Yposition_center()-sqrt(pow((tank[i].get_tankScreen_height()/4),2)+pow((tank[i].get_tankScreen_width()/2),2))*sin(tank[i].get_angle()/180.0*3.1415-PI/2+atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2))) ;
+                x2=tank[i].get_Xposition_center()+sqrt(pow((tank[i].get_tankScreen_height()/4),2)+pow((tank[i].get_tankScreen_width()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+3*PI/2-atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2))) ;
+                y2=tank[i].get_Yposition_center()-sqrt(pow((tank[i].get_tankScreen_height()/4),2)+pow((tank[i].get_tankScreen_width()/2),2))*sin(tank[i].get_angle()/180.0*3.1415+3*PI/2-atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2))) ;
+
+                x3=tank[i].get_Xposition_center()+sqrt(pow((tank[i].get_tankScreen_height()/6),2)+pow((tank[i].get_tankScreen_width()/2),2))*cos(tank[i].get_angle()/180.0*3.1415-PI/2+atan2((tank[i].get_tankScreen_height()/6),(tank[i].get_tankScreen_width()/2))) ;
+                y3=tank[i].get_Yposition_center()-sqrt(pow((tank[i].get_tankScreen_height()/6),2)+pow((tank[i].get_tankScreen_width()/2),2))*sin(tank[i].get_angle()/180.0*3.1415-PI/2+atan2((tank[i].get_tankScreen_height()/6),(tank[i].get_tankScreen_width()/2))) ;
+                x4=tank[i].get_Xposition_center()+sqrt(pow((tank[i].get_tankScreen_height()/3),2)+pow((tank[i].get_tankScreen_width()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+3*PI/2-atan2((tank[i].get_tankScreen_height()/3),(tank[i].get_tankScreen_width()/2))) ;
+                y4=tank[i].get_Yposition_center()-sqrt(pow((tank[i].get_tankScreen_height()/3),2)+pow((tank[i].get_tankScreen_width()/2),2))*sin(tank[i].get_angle()/180.0*3.1415+3*PI/2-atan2((tank[i].get_tankScreen_height()/3),(tank[i].get_tankScreen_width()/2))) ;
+
+                x5= tank[i].get_Xposition_center()+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2-atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2)));
+                y5= tank[i].get_Yposition_center()-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2-atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2)));
+
+                x6= tank[i].get_Xposition_center()+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2+atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2)));
+                y6= tank[i].get_Yposition_center()-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2+atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2)));
+
+
+
+                filledCircleRGBA(SCREEN,x1,y1,5,255,0,0,255);
+                filledCircleRGBA(SCREEN,x2,y2,5,255,0,0,255);
+                filledCircleRGBA(SCREEN,x3,y3,5,255,0,0,255);
+                filledCircleRGBA(SCREEN,x4,y4,5,255,0,0,255);
+                filledCircleRGBA(SCREEN,x5,y5,5,255,0,0,255);
+                filledCircleRGBA(SCREEN,x6,y6,5,255,0,0,255);
+
+                for(int k=0 ; k<12 ; k++)
+                filledCircleRGBA(SCREEN,tank[i].get_critical_dot(k,0),tank[i].get_critical_dot(k,1),5,255,0,0,255);
+            }
+
+    int x=tank[i].get_Xposition_center();
+    int y=tank[i].get_Yposition_center();
+    int x0=x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height())));
+    int y0=y-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*sin(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height())));
+    x=x0-sqrt(pow(tank[i].get_tankScreen_height()/2,2)+pow(tank[i].get_tankScreen_width()/2,2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));
+    y=y0+sqrt(pow(tank[i].get_tankScreen_height()/2,2)+pow(tank[i].get_tankScreen_width()/2,2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));
+    filledCircleRGBA(SCREEN,x0,y0,5,255,0,0,255);
+    filledCircleRGBA(SCREEN,x,y-40,5,255,0,0,255);
+
+
+        int x0=x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height())));
+        int y0=y-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*sin(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height())));
+        x0-=rotatedTank[i]->w/2-tankScreen[i]->w/2;
+        y0-=rotatedTank[i]->h/2-tankScreen[i]->h/2;
+        x=x0-sqrt(pow((x-x0),2)+pow((y-y0),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));
+        y=y0+sqrt(pow((x-x0),2)+pow((y-y0),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));
+
+
+            }*/
+
 /*H*/
 
 			//set tank speed
@@ -1239,6 +1316,200 @@ return 0;
 //                             functions                                //
 
 //////////////////////////////////////////////////////////////////////////
+
+void random_position(SDL_Surface *SCREEN,Tank *tank,int i)
+{
+    /*Uint32 *pixels = (Uint32 *) SCREEN->pixels;
+    Uint8 *color=(Uint8 *) & ( pixels[(100) *SCREEN->w+(100)] );
+    Uint8 *color1=(Uint8 *) & ( pixels[(100) *SCREEN->w+(100)] );
+    Uint8 *color2=(Uint8 *) & ( pixels[(100) *SCREEN->w+(100)] );
+    int x;
+    int y;
+    int angle;
+
+    bool flag=true;
+
+    while(flag)
+    {
+        cout<<"while"<<endl;
+        x=rand()%(frame_width-300)+100;
+        y=rand()%(frame_height-300)+100;
+
+        color = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x)] );
+        if( color[2]>230 && color[1]>230 && color[0]>230 )
+        {
+            cout<<"color1"<<endl;
+            color = (Uint8 *) & ( pixels[(y+50) *SCREEN->w+(x)] );
+            color1 = (Uint8 *) & ( pixels[(y+25) *SCREEN->w+(x)] );
+
+            if( color[2]==0 && color[1]==0 && color[0]==0 && color1[2]==0 && color1[1]==0 && color1[0]==0 )
+            {
+                tank[i].set_Xposition_center(x);
+                tank[i].set_Yposition_center(y+50);
+                bool f=true;
+                for(int k=0 ; k<10 ; k++)
+                {
+                    color2 = (Uint8 *) & ( pixels[(tank[i].get_critical_dot(k,1)) *SCREEN->w+(tank[i].get_critical_dot(k,0))] );
+                    if( color2[2]>230 && color2[1]>230 && color2[0]>230 )
+                    f=false;
+                }
+
+                if(f==true)
+                {
+                    angle=(rand()%360);
+                    //tank[i].set_angle(angle);
+                    tank[i].set_Xposition( x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height()))) );
+                    tank[i].set_Yposition( y+50-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/2),2))*sin(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height()))) );
+
+                    tank[i].set_Xposition_center(x);
+                    tank[i].set_Yposition_center(y+50);
+
+                    flag=false;
+                }
+            }
+        }
+    }*/
+
+
+    Uint32 *pixels = (Uint32 *) SCREEN->pixels;
+    Uint8 *color=(Uint8 *) & ( pixels[(100) *SCREEN->w+(100)] );
+    int x0;
+    int y0;
+    int angle;
+
+    bool flag=true;
+    while(flag)
+    {
+        angle=rand()%360;
+        tank[i].set_angle(angle);
+        rotatedTank[i]=rotozoomSurface(tankScreen[i],tank[i].get_angle()-90,1.0,0);
+
+        cout<<"while"<<endl;
+        x0=rand()%(frame_width-300)+100;
+        y0=rand()%(frame_height-300)+100;
+        int x=x0-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));
+        int y=y0+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/2),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));
+        /*int x0=x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height())));
+        int y0=y-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*sin(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height())));
+        x0-=rotatedTank[i]->w/2-tankScreen[i]->w/2;
+        y0-=rotatedTank[i]->h/2-tankScreen[i]->h/2;
+        x=x0-sqrt(pow((x-x0),2)+pow((y-y0),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));
+        y=y0+sqrt(pow((x-x0),2)+pow((y-y0),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));*/
+
+
+        color = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x)] );
+
+        if( color[2]<30 && color[1]<30 && color[0]<30 )
+        {
+                cout<<"color1"<<endl;
+                tank[i].set_Xposition_center(x);
+                tank[i].set_Yposition_center(y);
+                tank[i].set_critical_dots(SCREEN);
+                int x1,x2,x3,x4,x5,x6,x7,x8,x9,x10,x11,x12;
+                int y1,y2,y3,y4,y5,y6,y7,y8,y9,y10,y11,y12;
+
+                x1=x+sqrt(pow((tank[i].get_tankScreen_height()/4),2)+pow((tank[i].get_tankScreen_width()/2),2))*cos(tank[i].get_angle()/180.0*3.1415-PI/2+atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2))) ;
+                y1=y-sqrt(pow((tank[i].get_tankScreen_height()/4),2)+pow((tank[i].get_tankScreen_width()/2),2))*sin(tank[i].get_angle()/180.0*3.1415-PI/2+atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2))) ;
+
+                x2=x+sqrt(pow((tank[i].get_tankScreen_height()/4),2)+pow((tank[i].get_tankScreen_width()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+3*PI/2-atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2))) ;
+                y2=y-sqrt(pow((tank[i].get_tankScreen_height()/4),2)+pow((tank[i].get_tankScreen_width()/2),2))*sin(tank[i].get_angle()/180.0*3.1415+3*PI/2-atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2))) ;
+
+                x3= x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2-atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2)));
+                y3= y-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2-atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2)));
+
+                x4= x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2+atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2)));
+                y4= y-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2+atan2((tank[i].get_tankScreen_height()/4),(tank[i].get_tankScreen_width()/2)));
+
+                x5=x+sqrt(pow((3*tank[i].get_tankScreen_height()/8),2)+pow((tank[i].get_tankScreen_width()/2),2))*cos(tank[i].get_angle()/180.0*3.1415-PI/2+atan2((3*tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2))) ;
+                y5=y-sqrt(pow((3*tank[i].get_tankScreen_height()/8),2)+pow((tank[i].get_tankScreen_width()/2),2))*sin(tank[i].get_angle()/180.0*3.1415-PI/2+atan2((3*tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2))) ;
+
+                x6=x+sqrt(pow((3*tank[i].get_tankScreen_height()/8),2)+pow((tank[i].get_tankScreen_width()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+3*PI/2-atan2((3*tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2))) ;
+                y6=y-sqrt(pow((3*tank[i].get_tankScreen_height()/8),2)+pow((tank[i].get_tankScreen_width()/2),2))*sin(tank[i].get_angle()/180.0*3.1415+3*PI/2-atan2((3*tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2))) ;
+
+                x7=x+sqrt(pow((tank[i].get_tankScreen_height()/8),2)+pow((tank[i].get_tankScreen_width()/2),2))*cos(tank[i].get_angle()/180.0*3.1415-PI/2+atan2((tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2))) ;
+                y7=y-sqrt(pow((tank[i].get_tankScreen_height()/8),2)+pow((tank[i].get_tankScreen_width()/2),2))*sin(tank[i].get_angle()/180.0*3.1415-PI/2+atan2((tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2))) ;
+
+                x8=x+sqrt(pow((tank[i].get_tankScreen_height()/8),2)+pow((tank[i].get_tankScreen_width()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+3*PI/2-atan2((tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2))) ;
+                y8=y-sqrt(pow((tank[i].get_tankScreen_height()/8),2)+pow((tank[i].get_tankScreen_width()/2),2))*sin(tank[i].get_angle()/180.0*3.1415+3*PI/2-atan2((tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2))) ;
+
+                x9= x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((3*tank[i].get_tankScreen_height()/8),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2-atan2((3*tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2)));
+                y9= y-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((3*tank[i].get_tankScreen_height()/8),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2-atan2((3*tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2)));
+
+                x10= x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((3*tank[i].get_tankScreen_height()/8),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2+atan2((3*tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2)));
+                y10= y-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((3*tank[i].get_tankScreen_height()/8),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2+atan2((3*tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2)));
+
+                x11= x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/8),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2-atan2((tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2)));
+                y11= y-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/8),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2-atan2((tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2)));
+
+                x12= x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/8),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2+atan2((tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2)));
+                y12= y-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/8),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2+atan2((tank[i].get_tankScreen_height()/8),(tank[i].get_tankScreen_width()/2)));
+
+
+                bool f=true;
+
+                color = (Uint8 *) & ( pixels[(y1) *SCREEN->w+(x1)] );
+                if( color[2]>230 && color[1]>230 && color[0]>230 ) f=false;
+
+                color = (Uint8 *) & ( pixels[(y2) *SCREEN->w+(x2)] );
+                if( color[2]>230 && color[1]>230 && color[0]>230 ) f=false;
+
+                color = (Uint8 *) & ( pixels[(y3) *SCREEN->w+(x3)] );
+                if( color[2]>230 && color[1]>210 && color[0]>230 ) f=false;
+
+                color = (Uint8 *) & ( pixels[(y4) *SCREEN->w+(x4)] );
+                if( color[2]>230 && color[1]>230 && color[0]>230 ) f=false;
+
+                color = (Uint8 *) & ( pixels[(y5) *SCREEN->w+(x5)] );
+                if( color[2]>230 && color[1]>230 && color[0]>230 ) f=false;
+
+                color = (Uint8 *) & ( pixels[(y6) *SCREEN->w+(x6)] );
+                if( color[2]>230 && color[1]>230 && color[0]>230 ) f=false;
+
+                color = (Uint8 *) & ( pixels[(y7) *SCREEN->w+(x7)] );
+                if( color[2]>230 && color[1]>230 && color[0]>230 ) f=false;
+
+                color = (Uint8 *) & ( pixels[(y8) *SCREEN->w+(x8)] );
+                if( color[2]>230 && color[1]>230 && color[0]>230 ) f=false;
+
+                color = (Uint8 *) & ( pixels[(y9) *SCREEN->w+(x9)] );
+                if( color[2]>230 && color[1]>230 && color[0]>230 ) f=false;
+
+                color = (Uint8 *) & ( pixels[(y10) *SCREEN->w+(x10)] );
+                if( color[2]>230 && color[1]>230 && color[0]>230 ) f=false;
+
+                color = (Uint8 *) & ( pixels[(y11) *SCREEN->w+(x11)] );
+                if( color[2]>230 && color[1]>230 && color[0]>230 ) f=false;
+
+                color = (Uint8 *) & ( pixels[(y12) *SCREEN->w+(x12)] );
+                if( color[2]>230 && color[1]>230 && color[0]>230 ) f=false;
+
+
+                if(f==true)
+                for(int k=0 ; k<12 ; k++)
+                {
+                    color = (Uint8 *) & ( pixels[(tank[i].get_critical_dot(k,1)) *SCREEN->w+(tank[i].get_critical_dot(k,0))] );
+                    if( color[2]>230 && color[1]>230 && color[0]>230 )
+                    f=false;
+                }
+
+                if(f==true)
+                {
+                    cout<<"color2"<<endl;
+                    tank[i].set_Xposition( x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height()))) );
+                    tank[i].set_Yposition( y-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*sin(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height()))) );
+
+                    tank[i].set_Xposition_center(x);
+                    tank[i].set_Yposition_center(y);
+
+                    flag=false;
+                }
+
+        }
+
+    }
+
+}
+
 int randomMap(int max_numbers_of_map,int mapNum)
 {
     int p=rand()%max_numbers_of_map;
@@ -1492,7 +1763,7 @@ void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game)
                 }
             }
 
-            else if(event.jaxis.which==1)
+            else if(event.jaxis.which==2)
             {
                 //If the Y axis changed
                 if(event.jaxis.axis==1)
@@ -1555,7 +1826,7 @@ void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game)
                     }
             }
 
-            else if(event.jbutton.which==1)
+            else if(event.jbutton.which==2)
             switch(event.jbutton.button)
             {
                 case 4:
