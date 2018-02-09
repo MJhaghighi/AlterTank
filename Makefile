@@ -13,7 +13,7 @@ CC = g++
 COMPILER_FLAGS = -w
 
 #LINKER_FLAGS specifies the libraries we're linking against
-LINKER_FLAGS = -lSDL -lSDL_image -lSDL_gfx -lSDL_ttf
+LINKER_FLAGS = -lSDL -lSDL_image -lSDL_gfx -lSDL_ttf -lSDL_mixer
 
 #OBJ_NAME specifies the name of our exectuable
 OBJ_NAME = main.out
