@@ -8,16 +8,18 @@
 #include <iomanip>
 #include <SDL/SDL_ttf.h>
 #include <SDL/SDL_mixer.h>
-#include "class.h"
-
+#include "Power_up.h"
 
 using namespace std;
 #define PI 3.1415
 
 
+
+//global variables
+
 int frame_width=1800;
 int frame_height=1020;
-int gameTime=3*60*1000+1000;  // 3 min matches
+int gameTime=5*60*1000+1000;  // 5 min matches
 int max_numbers_of_player=4;
 int max_numbers_of_map=4;
 SDL_Event event;
@@ -35,686 +37,44 @@ SDL_Surface** chopperShScreen = new SDL_Surface*[4];
 SDL_Surface** rotatedShadow = new SDL_Surface*[4];
 SDL_Surface** fireScreen = new SDL_Surface*[6];
 SDL_Surface* heartScreen = new SDL_Surface;
-SDL_Surface** power_upScreen = new SDL_Surface*[4];
-
-
+SDL_Surface** power_upScreen = new SDL_Surface*[5];
+SDL_Surface* shieldBG = new SDL_Surface;
+SDL_Surface* shieldUG = new SDL_Surface;
+SDL_Surface* rotatedShieldBG = new SDL_Surface;
+SDL_Surface* rotatedShieldUG = new SDL_Surface;
 SDL_Joystick *stick1=NULL;
 SDL_Joystick *stick2=NULL;
+Mix_Music *explosion;
+Mix_Music *plane;
+Mix_Music *emp;
+Mix_Music *Menu;
+Mix_Music *laser;
 
-Mix_Music *explosion;//=new MUS_WAV;
-Mix_Music *plane;//=new MUS_MP3;
-Mix_Music *emp;//=new MUS_MP3;
-Mix_Music *Menu;//=new MUS_MP3;
-Mix_Music *laser;//=new MUS_WAV;
 
 
-void check_if_power_up_is_gotten(Power_up *power_up,Tank* tank,int numbers_of_player_in_game , int i);
+//function headers
+void check_if_power_up_is_gotten(Power_up *power_up,Tank* tank,int numbers_of_player_in_game , int i,bool shield_flag [4]);
 void check_if_chopper_drop_power_up(Chopper chopper,Power_up *power_up,int i);
 int make_power_up(Power_up* power_up,int frame_height,int frame_width);
 bool check_game_end(Tank *tank,int numbers_of_player_in_game);
 int dictance(int x1 ,int y1 ,int x2,int y2);
 int randomMap(int max_numbers_of_map,int mapNum);
-//void handle_move_event(Tank*tank,int i);
-void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game);
-void handle_fire_event(Tank *tank,Bullet *bullet ,int numbers_of_player_in_game );
-
+void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game,bool shield_flag[4]);
+void handle_fire_event(Tank *tank,Bullet *bullet ,int numbers_of_player_in_game, bool shield_flag[4] );
 void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event);
 void shift_bullets(Bullet *bullet);
 void shoot(Tank *tank,Bullet *bullet , int i);
-void shoot2(Tank *tank,int numbers_of_player_in_game,int k);
-void shoot3(SDL_Surface *SCREEN,Tank *tank,int numbers_of_player_in_game,int k);
+void shoot2(Tank *tank,int numbers_of_player_in_game,int k,bool shield_flag[4]);
+void shoot3(SDL_Surface *SCREEN,Tank *tank,int numbers_of_player_in_game,int k,bool shield_flag[4]);
 void apply_surface(int x,int y,SDL_Surface* source,SDL_Surface* destination);
 char* NumToStr(int num);
 char* timeString(int Min,int sec);
-
 void random_position(SDL_Surface *SCREEN,Tank *tank,int i);
+void show_winner(SDL_Surface* SCREEN,SDL_Event &event,TTF_Font* font,int i,int winner_score);
 
 
-void Tank::set_variable_for_fire(int i)
-{
-	variable_for_fire=i;
-}
-int Tank::get_variable_for_fire()
-{
-	return (variable_for_fire);
-}
 
-void Tank::set_score(int i)
-{
-    score=i;
-}
-
-void Tank::set_bulletNum(int i)
-{
-    bulletNum=i;
-}
-
-void Tank::set_R(int i)
-{
-    R=i;
-}
-
-void Tank::set_G(int i)
-{
-    G=i;
-}
-
-void Tank::set_B(int i)
-{
-    B=i;
-}
-
-void Tank::set_variable_for_shoot2(int i)
-{
-	variable_for_shoot2=i;
-}
-
-void Tank::set_variable_for_shoot3(int i)
-{
-	variable_for_shoot3=i;
-}
-
-void Tank::check_collision(SDL_Surface *SCREEN)
-{
-	bool flag=false;
-	Uint32 *pixels = (Uint32 *) SCREEN->pixels;
-	for(int j=0 ; j<=4 ; j++)
-	{
-        for(int k=-2 ; k<=2 ; k++)
-        {
-            Uint8 *color = (Uint8 *) & ( pixels[(critical_dot[j][1]+k) *SCREEN->w+(critical_dot[j][0]+k)] );
-            if(color[2]>240 && color[1]>240 && color[0]>240) flag=true; //move(-1);//flag_UP=0;//
-		}
-	}
-
-	for(int j=5 ; j<=9 ; j++)
-	{
-        for(int k=-2 ; k<=2 ; k++)
-        {
-            Uint8 *color = (Uint8 *) & ( pixels[(critical_dot[j][1]+k) *SCREEN->w+(critical_dot[j][0]+k)] );
-            if(color[2]>240 && color[1]>240 && color[0]>240)flag_DOWN=0; //flag=true; //move(-1);
-        }
-	}
-	if (flag==true)
-	{
-		move(-1);
-	}
-}
-void Tank::set_critical_dots(SDL_Surface *SCREEN)
-{
-		critical_dot[0][0]=get_Xposition_center()+sqrt(pow((tankScreen_width/2),2)+pow((tankScreen_height/2),2))*cos(get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//x   1
-		critical_dot[0][1]=get_Yposition_center()-sqrt(pow((tankScreen_width/2),2)+pow((tankScreen_height/2),2))*sin(get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//y
-
-		critical_dot[2][0]=get_Xposition_center()+ (3*tankScreen_height/5)*cos(get_angle()/180.0*3.1415);//x   3
-		critical_dot[2][1]=get_Yposition_center()-(3*tankScreen_height/5)*sin(get_angle()/180.0*3.1415);//y
-
-		critical_dot[4][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*cos(get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//x   5
-		critical_dot[4][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*sin(get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//y
-
-		critical_dot[5][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*cos(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//x   6
-		critical_dot[5][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*sin(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height)));//y
-
-		critical_dot[7][0]=get_Xposition_center()-(tankScreen_height/2)*cos(get_angle()/180.0*3.1415);//x   8
-		critical_dot[7][1]=get_Yposition_center()+(tankScreen_height/2)*sin(get_angle()/180.0*3.1415);//y
-
-		critical_dot[9][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*cos(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//x   10
-		critical_dot[9][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/2),2))*sin(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height)));//y
-
-		critical_dot[10][0]=get_Xposition_center()+(tankScreen_width/2)*cos(PI/2+get_angle()/180.0*3.1415);//x   11
-		critical_dot[10][1]=get_Yposition_center()-(tankScreen_width/2)*sin(PI/2+get_angle()/180.0*3.1415);//y
-
-		critical_dot[11][0]=get_Xposition_center()+(tankScreen_width/2)*cos(get_angle()/180.0*3.1415-PI/2);//x   12
-		critical_dot[11][1]=get_Yposition_center()-(tankScreen_width/2)*sin(get_angle()/180.0*3.1415-PI/2);//y
-
-		critical_dot[1][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*cos(get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height*2)));//x   2
-		critical_dot[1][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height*2)));//y
-
-		critical_dot[3][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*cos(get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height*2)));//x   4
-		critical_dot[3][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height*2)));//y
-
-		critical_dot[6][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*cos(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height*2)));//x   7
-		critical_dot[6][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(PI+get_angle()/180.0*3.1415-atan2((tankScreen_width),(tankScreen_height*2)));//y
-
-		critical_dot[8][0]=get_Xposition_center()+sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*cos(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height*2)));//x   9
-        critical_dot[8][1]=get_Yposition_center()-sqrt(pow((tankScreen_height/2),2)+pow((tankScreen_width/4),2))*sin(PI+get_angle()/180.0*3.1415+atan2((tankScreen_width),(tankScreen_height*2)));//y
-
-}
-void Tank::set_tankScreen_width(int i)
-{
-	tankScreen_width=i;
-}
-void Tank::set_tankScreen_height(int i)
-{
-	tankScreen_height=i;
-}
-
-void Tank::set_flag_UP(bool i)
-{
-	flag_UP=i;
-}
-void Tank::set_flag_DOWN(bool i)
-{
-	flag_DOWN=i;
-}
-void Tank::set_flag_exist(bool i)
-{
-    flag_exist=i;
-}
-void Tank::set_flag_laser(bool i)
-{
-    flag_laser=i;
-}
-void Tank::set_Xposition_center(int i)
-{
-	Xposition_center=i;
-}
-void Tank::set_Yposition_center(int i)
-{
-	Yposition_center=i;
-}
-void Tank::set_health(int i)
-{
-	health=i;
-}
-void Tank::set_Xposition(int i)
-{
-	Xposition=i;
-}
-void Tank::set_Yposition(int i)
-{
-	Yposition=i;
-}
-void Tank::set_speed(int i)
-{
-	speed=i;
-}
-void Tank::set_Xspeed(int i)
-{
-	if (i==1)
-	{
-		Xspeed=(float)get_speed()*cos((float)get_angle()*PI/180.0);
-	}
-	else if (i==-1)
-	{
-		Xspeed=(-1)*((float)get_speed()*cos((float)get_angle()*PI/180.0));
-	}
-	else if (i==0)
-	{
-		Xspeed=0;
-
-	}
-}
-void Tank::set_Yspeed(int i)
-{
-	if (i==1)
-	{
-		Yspeed=(float)get_speed()*sin((float)get_angle()*PI/180.0);
-	}
-	else if(i==-1)
-	{
-		Yspeed=(-1)*((float)get_speed()*sin((float)get_angle()*PI/180.0));
-	}
-	else if (i==0)
-	{
-		Yspeed=0;
-	}
-}
-void Tank::set_angle(int i)
-{
-	angle=i;
-}
-void Tank::set_weapon_kind(int i)
-{
-	weapon_kind=i;
-}
-void Tank::set_omega(int i)
-{
-	if (i==1)
-	{
-		omega=10;
-	}
-	else if (i==-1)
-	{
-		omega=-10;
-	}
-	else if (i==0)
-	{
-		omega=0;
-	}
-}
-
-void Tank::set_laser_x1(int i)
-{
-    laser_x1=i;
-}
-
-void Tank::set_laser_x2(int i)
-{
-    laser_x2=i;
-}
-
-void Tank::set_laser_y1(int i)
-{
-    laser_y1=i;
-}
-
-void Tank::set_laser_y2(int i)
-{
-    laser_y2=i;
-}
-////////////////////////////////////////
-int Tank::get_score()
-{
-    return score;
-}
-
-int Tank::get_bulletNum()
-{
-    return bulletNum;
-}
-
-int Tank::get_R()
-{
-    return R;
-}
-
-int Tank::get_G()
-{
-    return G;
-}
-
-int Tank::get_B()
-{
-    return B;
-}
-
-int Tank::get_variable_for_shoot2()
-{
-	return(variable_for_shoot2);
-}
-
-int Tank::get_variable_for_shoot3()
-{
-	return(variable_for_shoot3);
-}
-
-bool Tank::get_flag_UP()
-{
-	return(flag_UP);
-}
-bool Tank::get_flag_DOWN()
-{
-	return(flag_DOWN);
-}
-bool Tank::get_flag_laser()
-{
-	return(flag_laser);
-}
-bool Tank::get_flag_exist()
-{
-    return flag_exist;
-}
-int Tank::get_tankScreen_width()
-{
-    return tankScreen_width;
-}
-int Tank::get_tankScreen_height()
-{
-    return tankScreen_height;
-}
-int Tank::get_Xposition_center()
-{
-	return(Xposition_center);
-}
-int Tank::get_Yposition_center()
-{
-	return(Yposition_center);
-}
-int Tank::get_health()
-{
-	return(health);
-}
-int Tank::get_Xposition()
-{
-	return(Xposition);
-}
-int Tank::get_Yposition()
-{
-	return(Yposition);
-}
-int Tank::get_speed()
-{
-	return(speed);
-}
-int Tank::get_Xspeed()
-{
-	return(Xspeed);
-}
-int Tank::get_Yspeed()
-{
-	return(Yspeed);
-}
-int Tank::get_angle()
-{
-	return(angle);
-}
-int Tank::get_omega()
-{
-	return(omega);
-}
-int Tank::get_weapon_kind()
-{
-	return(weapon_kind);
-}
-int Tank::get_critical_dot(int i,int j)
-{
-    return critical_dot[i][j];
-}
-int Tank::get_laser_x1()
-{
-    return laser_x1;
-}
-int Tank::get_laser_x2()
-{
-    return laser_x2;
-}
-int Tank::get_laser_y1()
-{
-    return laser_y1;
-}
-int Tank::get_laser_y2()
-{
-    return laser_y2;
-}
-
-//////////////////////////////////////
-void Tank::move(int i)
-{
-	if (i==1)
-	{
-		Xposition+=get_Xspeed();
-		Yposition+=get_Yspeed();
-	}
-	else if(i==-1)
-	{
-		Xposition-=get_Xspeed();
-		Yposition-=get_Yspeed();
-	}
-}
-
-void Tank::turn_around()
-{
-	angle+=get_omega();
-}
-
-
-
-
-		void Bullet::check_collision(SDL_Surface *SCREEN)
-        {
-            int x=Xposition;
-            int y=Yposition;
-            int Vx=Xspeed;
-            int Vy=Yspeed;
-
-            Uint32 *pixels = (Uint32 *) SCREEN->pixels;
-            Uint8 *color;
-            Uint8 *color2;
-
-            if(Vx>=0 && Vy<=0)
-            {
-                color = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x+radius+7)] );
-                color2 = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x+radius+1)] );
-                if(color[2]>240 && color[1]>240 && color[0]>240) Xspeed*=(-1);
-                else if(color2[2]>240 && color2[1]>240 && color2[0]>240) Xspeed*=(-1);
-
-
-                color = (Uint8 *) & ( pixels[(y-radius-7) *SCREEN->w+(x)] );
-                color2 = (Uint8 *) & ( pixels[(y-radius-1) *SCREEN->w+(x)] );
-                if(color[2]>240 && color[1]>240 && color[0]>240) Yspeed*=(-1);
-                else if(color2[2]>240 && color2[1]>240 && color2[0]>240) Yspeed*=(-1);
-            }
-
-            else if(Vx>=0 && Vy>=0)
-            {
-                color = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x+radius+7)] );
-                color2 = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x+radius+1)] );
-                if(color[2]>240 && color[1]>240 && color[0]>240) Xspeed*=(-1);
-                else if(color2[2]>240 && color2[1]>240 && color2[0]>240) Xspeed*=(-1);
-
-                color = (Uint8 *) & ( pixels[(y+radius+7) *SCREEN->w+(x)] );
-                color2 = (Uint8 *) & ( pixels[(y+radius+1) *SCREEN->w+(x)] );
-                if(color[2]>240 && color[1]>240 && color[0]>240) Yspeed*=(-1);
-                else if(color2[2]>240 && color2[1]>240 && color2[0]>240) Yspeed*=(-1);
-            }
-
-            else if(Vx<=0 && Vy<=0)
-            {
-                color = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x-radius-7)] );
-                color2 = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x-radius-1)] );
-                if(color[2]>240 && color[1]>240 && color[0]>240) Xspeed*=(-1);
-                else if(color2[2]>240 && color2[1]>240 && color2[0]>240) Xspeed*=(-1);
-
-                color = (Uint8 *) & ( pixels[(y-radius-7) *SCREEN->w+(x)] );
-                color2 = (Uint8 *) & ( pixels[(y-radius-1) *SCREEN->w+(x)] );
-                if(color[2]>240 && color[1]>240 && color[0]>240) Yspeed*=(-1);
-                else if(color2[2]>240 && color2[1]>240 && color2[0]>240) Yspeed*=(-1);
-            }
-
-            else if(Vx<=0 && Vy>=0)
-            {
-                color = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x-radius-7)] );
-                color2 = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x-radius-1)] );
-                if(color[2]>240 && color[1]>240 && color[0]>240) Xspeed*=(-1);
-                else if(color2[2]>240 && color2[1]>240 && color2[0]>240) Xspeed*=(-1);
-
-                color = (Uint8 *) & ( pixels[(y+radius+7) *SCREEN->w+(x)] );
-                color2 = (Uint8 *) & ( pixels[(y+radius+1) *SCREEN->w+(x)] );
-                if(color[2]>240 && color[1]>240 && color[0]>240) Yspeed*=(-1);
-                else if(color2[2]>240 && color2[1]>240 && color2[0]>240) Yspeed*=(-1);
-            }
-        }
-
-
-        void Bullet::collision_with_tank(SDL_Surface *SCREEN,Tank *tank,int i,Mix_Music *explosion)
-        {
-            int x=Xposition;
-            int y=Yposition;
-            int Vx=Xspeed;
-            int Vy=Yspeed;
-
-            Uint32 *pixels = (Uint32 *) SCREEN->pixels;
-            Uint8 *color;
-
-            if(Vx>=0 && Vy<=0)
-            {
-                color = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x+radius+1)] );
-                if(color[2]>tank[i].get_R()-10 && color[2]<tank[i].get_R()+10 && color[1]>tank[i].get_G()-10 && color[1]<tank[i].get_G()+10 && color[0]>tank[i].get_B()-10 && color[0]<tank[i].get_B()+10 && flag_exist==true)
-                {
-                    tank[i].set_health(tank[i].get_health()-5);
-                    flag_exist=false;
-                    Mix_PlayMusic(explosion,0);
-                }
-
-
-                    color = (Uint8 *) & ( pixels[(y-radius-1) *SCREEN->w+(x)] );
-                    if(color[2]>tank[i].get_R()-10 && color[2]<tank[i].get_R()+10 && color[1]>tank[i].get_G()-10 && color[1]<tank[i].get_G()+10 && color[0]>tank[i].get_B()-10 && color[0]<tank[i].get_B()+10 && flag_exist==true)
-                    {
-                        tank[i].set_health(tank[i].get_health()-5);
-                        flag_exist=false;
-                        Mix_PlayMusic(explosion,0);
-                    }
-            }
-
-            else if(Vx>=0 && Vy>=0)
-            {
-                color = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x+radius+1)] );
-                if(color[2]>tank[i].get_R()-10 && color[2]<tank[i].get_R()+10 && color[1]>tank[i].get_G()-10 && color[1]<tank[i].get_G()+10 && color[0]>tank[i].get_B()-10 && color[0]<tank[i].get_B()+10 && flag_exist==true)
-                {
-                    tank[i].set_health(tank[i].get_health()-5);
-                    flag_exist=false;
-                    Mix_PlayMusic(explosion,0);
-                }
-
-                    color = (Uint8 *) & ( pixels[(y-radius-1) *SCREEN->w+(x)] );
-                    if(color[2]>tank[i].get_R()-10 && color[2]<tank[i].get_R()+10 && color[1]>tank[i].get_G()-10 && color[1]<tank[i].get_G()+10 && color[0]>tank[i].get_B()-10 && color[0]<tank[i].get_B()+10 && flag_exist==true)
-                    {
-                        tank[i].set_health(tank[i].get_health()-5);
-                        flag_exist=false;
-                        Mix_PlayMusic(explosion,0);
-                    }
-            }
-
-            else if(Vx<=0 && Vy<=0)
-            {
-                color = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x-radius-1)] );
-                if(color[2]>tank[i].get_R()-10 && color[2]<tank[i].get_R()+10 && color[1]>tank[i].get_G()-10 && color[1]<tank[i].get_G()+10 && color[0]>tank[i].get_B()-10 && color[0]<tank[i].get_B()+10 && flag_exist==true)
-                {
-                    tank[i].set_health(tank[i].get_health()-5);
-                    flag_exist=false;
-                    Mix_PlayMusic(explosion,0);
-                }
-
-
-                    color = (Uint8 *) & ( pixels[(y-radius-1) *SCREEN->w+(x)] );
-                    if(color[2]>tank[i].get_R()-10 && color[2]<tank[i].get_R()+10 && color[1]>tank[i].get_G()-10 && color[1]<tank[i].get_G()+10 && color[0]>tank[i].get_B()-10 && color[0]<tank[i].get_B()+10 && flag_exist==true)
-                    {
-                        tank[i].set_health(tank[i].get_health()-5);
-                        flag_exist=false;
-                        Mix_PlayMusic(explosion,0);
-                    }
-            }
-
-            else if(Vx<=0 && Vy>=0)
-            {
-                color = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x-radius-1)] );
-                if(color[2]>tank[i].get_R()-10 && color[2]<tank[i].get_R()+10 && color[1]>tank[i].get_G()-10 && color[1]<tank[i].get_G()+10 && color[0]>tank[i].get_B()-10 && color[0]<tank[i].get_B()+10 && flag_exist==true)
-                {
-                    tank[i].set_health(tank[i].get_health()-5);
-                    flag_exist=false;
-                    Mix_PlayMusic(explosion,0);
-                }
-
-                    color = (Uint8 *) & ( pixels[(y-radius-1) *SCREEN->w+(x)] );
-                    if(color[2]>tank[i].get_R()-10 && color[2]<tank[i].get_R()+10 && color[1]>tank[i].get_G()-10 && color[1]<tank[i].get_G()+10 && color[0]>tank[i].get_B()-10 && color[0]<tank[i].get_B()+10 && flag_exist==true)
-                    {
-                        tank[i].set_health(tank[i].get_health()-5);
-                        flag_exist=false;
-                        Mix_PlayMusic(explosion,0);
-                    }
-            }
-        }
-
-        void Bullet::move()
-        {
-            Xposition+=Xspeed;
-            Yposition+=Yspeed;
-        }
-
-		void Bullet::set_Xposition(int i)
-		{
-			Xposition=i;
-		}
-		void Bullet::set_Yposition(int i)
-		{
-			Yposition=i;
-		}
-		void Bullet::set_angle(int i)
-		{
-			angle=i;
-		}
-		void Bullet::set_speed(int i)
-		{
-			speed=i;
-		}
-		void Bullet::set_Xspeed(int i)
-		{
-			if (i==1)
-			{
-				Xspeed=(float)get_speed()*cos((float)get_angle()*PI/180.0);
-			}
-			else if (i==0)
-			{
-				Xspeed=0;
-
-			}
-		}
-		void Bullet::set_Yspeed(int i)
-		{
-			if (i==1)
-			{
-				Yspeed=(float)(-1)*get_speed()*sin((float)get_angle()*PI/180.0);
-			}
-			else if (i==0)
-			{
-				Yspeed=0;
-			}
-		}
-		void Bullet::set_flag_exist(bool i)
-		{
-			flag_exist=i;
-		}
-
-		void Bullet::set_radius(int i)
-        {
-            radius=i;
-        }
-
-        void Bullet::set_startTime(int i)
-        {
-            startTime=i;
-        }
-        void Bullet::set_existingTime(int i)
-        {
-            existingTime=i;
-        }
-
-
-       	int Bullet::get_Xposition()
-       	{
-       		return(Xposition);
-       	}
-       	int Bullet::get_Yposition()
-       	{
-       		return(Yposition);
-       	}
-       	int Bullet::get_speed()
-       	{
-       		return (speed);
-       	}
-       	int Bullet::get_Xspeed()
-       	{
-       		return(Xspeed);
-       	}
-       	int Bullet::get_Yspeed()
-       	{
-       		return(Yspeed);
-       	}
-       	bool Bullet::get_flag_exist()
-       	{
-       		return(flag_exist);
-       	}
-       	int Bullet::get_angle()
-       	{
-       		return(angle);
-       	}
-       	int Bullet::get_radius()
-       	{
-       		return radius;
-       	}
-       	int Bullet::get_startTime()
-       	{
-            return startTime;
-       	}
-       	int Bullet::get_existingTime()
-       	{
-            return existingTime;
-       	}
-
-
-
-
-
+//functions
 char *timeString(int Min,int sec)
 {
     stringstream strs;
@@ -752,45 +112,52 @@ int  make_power_up(Power_up* power_up,int frame_height,int frame_width)
 	int y = 200+rand()%500;
 
 	int i = rand()%100;
-	if (i>=0 && i<25)
+	if (i>=0 && i<20)
 	{
 		power_up[0].set_Xposition(x);
 		power_up[0].set_Yposition(y);
 		power_up[0].set_flag_exist(true);
 		return(0);
 	}
-	else if (i>=25 && i<50)
+	else if (i>=20 && i<40)
 	{
 		power_up[1].set_Xposition(x);
 		power_up[1].set_Yposition(y);
 		power_up[1].set_flag_exist(true);
 		return(1);
 	}
-	else if (i>=50 && i<75)
+	else if (i>=40 && i<60)
 	{
 		power_up[2].set_Xposition(x);
 		power_up[2].set_Yposition(y);
 		power_up[2].set_flag_exist(true);
 		return(2);
 	}
-	else if (i>=75 && i<100)
+	else if (i>=60 && i<80)
 	{
 		power_up[3].set_Xposition(x);
 		power_up[3].set_Yposition(y);
 		power_up[3].set_flag_exist(true);
 		return(3);
 	}
+    else if (i>=80 && i<=100)
+    {
+        power_up[4].set_Xposition(x);
+        power_up[4].set_Yposition(y);
+        power_up[4].set_flag_exist(true);
+        return(4);  
+    }
 }
 
 void check_if_chopper_drop_power_up(Chopper chopper,Power_up *power_up,int i)
 {
-        if (dictance(chopper.get_Xposition_center(),chopper.get_Yposition_center(),power_up[i].get_Xposition_center(),power_up[i].get_Yposition_center()) < 50 )
+        if (dictance(chopper.get_Xposition_center(),chopper.get_Yposition_center(),power_up[i].get_Xposition_center(),power_up[i].get_Yposition_center()) < 100 )
         {
             power_up[i].set_flag_show(true);
         }
 }
 
-void check_if_power_up_is_gotten(Power_up *power_up,Tank* tank,int numbers_of_player_in_game , int i)
+void check_if_power_up_is_gotten(Power_up *power_up,Tank* tank,int numbers_of_player_in_game , int i,bool shield_flag[4])
 {
 	for (int j=0; j<numbers_of_player_in_game; j++)
 	{
@@ -814,6 +181,12 @@ void check_if_power_up_is_gotten(Power_up *power_up,Tank* tank,int numbers_of_pl
 			{
 				tank[j].set_health(tank[j].get_health()+5);
 			}
+            else if (i==4)
+            {
+                //tank[j].set_flag_shield(true);
+                shield_flag[j]=true;
+                tank[j].set_flag_shield(true);
+            }
 			power_up[i].set_flag_exist(false);
 			power_up[i].set_flag_show(false);
 
@@ -856,20 +229,10 @@ void random_position(SDL_Surface *SCREEN,Tank *tank,int i)
     bool flag=true;
     while(flag)
     {
-        //angle=rand()%360;
-        //tank[i].set_angle(angle);
-        //rotatedTank[i]=rotozoomSurface(tankScreen[i],tank[i].get_angle()-90,1.0,0);
-
         x0=rand()%(frame_width-100)+50;
         y0=rand()%(frame_height-170)+50;
         int x=x0-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));
         int y=y0+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/2),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));
-        /*int x0=x+sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/2),2))*cos(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height())));
-        int y0=y-sqrt(pow((tank[i].get_tankScreen_width()/2),2)+pow((tank[i].get_tankScreen_height()/4),2))*sin(tank[i].get_angle()/180.0*3.1415+atan2((tank[i].get_tankScreen_width()),(tank[i].get_tankScreen_height())));
-        x0-=rotatedTank[i]->w/2-tankScreen[i]->w/2;
-        y0-=rotatedTank[i]->h/2-tankScreen[i]->h/2;
-        x=x0-sqrt(pow((x-x0),2)+pow((y-y0),2))*cos(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));
-        y=y0+sqrt(pow((x-x0),2)+pow((y-y0),2))*sin(tank[i].get_angle()/180.0*3.1415+PI/2-atan2(tank[i].get_tankScreen_height()/2,tank[i].get_tankScreen_width()/2));*/
 
 
         color = (Uint8 *) & ( pixels[(y) *SCREEN->w+(x)] );
@@ -1006,7 +369,7 @@ void shoot(Tank *tank,Bullet *bullet , int i)  // Ordinary bullets
     shift_bullets(bullet);
 }
 
-void shoot2(Tank *tank,int numbers_of_player_in_game,int k) // EMP damage area
+void shoot2(Tank *tank,int numbers_of_player_in_game,int k,bool shield_flag[4]) // EMP damage area
 {
 	for (int i ; i<numbers_of_player_in_game ; i++)
 	{
@@ -1014,13 +377,20 @@ void shoot2(Tank *tank,int numbers_of_player_in_game,int k) // EMP damage area
             if (tank[i].get_flag_exist()==true)
                 if (dictance(tank[i].get_Xposition_center(),tank[i].get_Yposition_center(),tank[k].get_Xposition_center(),tank[k].get_Yposition_center())  <  500)
                 {
+                	if(shield_flag[i]==false)
                     tank[i].set_variable_for_shoot2(0);
+
+                	if(shield_flag[i]==true)
+                		shield_flag[i]=false;
+                	if(tank[i].get_flag_shield()==true)
+                	tank[i].set_flag_shield(false);
                 }
 	}
+	if(sound_flag==true)
 	Mix_PlayMusic(emp,0);
 }
 
-void shoot3(SDL_Surface *SCREEN,Tank *tank,int numbers_of_player_in_game,int k) // Laser shot
+void shoot3(SDL_Surface *SCREEN,Tank *tank,int numbers_of_player_in_game,int k,bool shield_flag[4]) // Laser shot
 {
     int x1 = tank[k].get_Xposition_center() + (tank[k].get_tankScreen_height()/2)*cos(tank[k].get_angle()/180.0*3.1415);
     int y1 = tank[k].get_Yposition_center() - (tank[k].get_tankScreen_height()/2)*sin(tank[k].get_angle()/180.0*3.1415);
@@ -1074,7 +444,12 @@ void shoot3(SDL_Surface *SCREEN,Tank *tank,int numbers_of_player_in_game,int k) 
                         x2=x;
                         y2=y;
                         flag_hit=true;
+                        if(shield_flag[i]==false)
                         tank[i].set_health(tank[i].get_health()-5);
+                    	if(shield_flag[i]==true)
+                    		shield_flag[i]=false;
+                    	if(tank[i].get_flag_shield()==true)
+                    		tank[i].set_flag_shield(false);
                         f=false;
                     }
                 }
@@ -1106,7 +481,12 @@ void shoot3(SDL_Surface *SCREEN,Tank *tank,int numbers_of_player_in_game,int k) 
                         x2=x;
                         y2=y;
                         flag_hit=true;
+                        if(shield_flag[i]==false)
                         tank[i].set_health(tank[i].get_health()-5);
+                    	if(shield_flag[i]==true)
+                    		shield_flag[i]=false;
+                    	if(tank[i].get_flag_shield()==true)
+                    		tank[i].set_flag_shield(false);
                         f=false;
                     }
                 }
@@ -1138,7 +518,12 @@ void shoot3(SDL_Surface *SCREEN,Tank *tank,int numbers_of_player_in_game,int k) 
                         x2=x;
                         y2=y;
                         flag_hit=true;
+                        if(shield_flag[i]==false)
                         tank[i].set_health(tank[i].get_health()-5);
+                    	if(shield_flag[i]==true)
+                    		shield_flag[i]=false;
+                    	if(tank[i].get_flag_shield()==true)
+                    		tank[i].set_flag_shield(false);
                         f=false;
                     }
                 }
@@ -1170,7 +555,12 @@ void shoot3(SDL_Surface *SCREEN,Tank *tank,int numbers_of_player_in_game,int k) 
                         x2=x;
                         y2=y;
                         flag_hit=true;
+                        if(shield_flag[i]==false)
                         tank[i].set_health(tank[i].get_health()-5);
+                    	if(shield_flag[i]==true)
+                    		shield_flag[i]=false;
+                    	if(tank[i].get_flag_shield()==true)
+                    		tank[i].set_flag_shield(false);
                         f=false;
                     }
                 }
@@ -1191,11 +581,13 @@ void shoot3(SDL_Surface *SCREEN,Tank *tank,int numbers_of_player_in_game,int k) 
     tank[k].set_laser_y2(y2);
 
     tank[k].set_flag_laser(false);
+
+    if(sound_flag==true)
     Mix_PlayMusic(laser,0);
 
 }
 
-void handle_fire_event(Tank *tank,Bullet *bullet ,int numbers_of_player_in_game)
+void handle_fire_event(Tank *tank,Bullet *bullet ,int numbers_of_player_in_game,bool shield_flag[4])
 {
 	if (event.type==SDL_KEYDOWN)
 	{
@@ -1221,7 +613,7 @@ void handle_fire_event(Tank *tank,Bullet *bullet ,int numbers_of_player_in_game)
 							if (tank[0].get_flag_weaponi(2)==true)
                             {
                                 tank[0].set_flag_weaponi(2,false);
-                                shoot2(tank,numbers_of_player_in_game,0);
+                                shoot2(tank,numbers_of_player_in_game,0,shield_flag);
                                 tank[0].set_weapon_kind(1);
                             }
 						} break;
@@ -1277,7 +669,7 @@ void handle_fire_event(Tank *tank,Bullet *bullet ,int numbers_of_player_in_game)
 						{
 							if (tank[1].get_flag_weaponi(2)==true)
 								{
-									shoot2(tank,numbers_of_player_in_game,1);
+									shoot2(tank,numbers_of_player_in_game,1,shield_flag);
 									tank[1].set_flag_weaponi(2,false);
 									tank[1].set_weapon_kind(1);
 								}
@@ -1324,7 +716,7 @@ int dictance(int x1 ,int y1 ,int x2,int y2)
 }
 
 
-void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game)
+void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game,bool shield_flag[4])
 {
 
 	if (numbers_of_player_in_game>=1)
@@ -1483,6 +875,7 @@ void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game)
                         {
                             case 1:
                             {
+                            	if(tank[2].get_flag_exist()==true)
                                 if(tank[2].get_bulletNum()>0)
                                 {
                                     shoot(tank,bullet,2);
@@ -1491,15 +884,17 @@ void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game)
                             } break;
                             case 2:
                             {
+                            	if(tank[2].get_flag_exist()==true)
                                 if (tank[2].get_flag_weaponi(2)==true)
                                 {
                                     tank[2].set_flag_weaponi(2,false);
-                                    shoot2(tank,numbers_of_player_in_game,0);
+                                    shoot2(tank,numbers_of_player_in_game,2,shield_flag);
                                     tank[2].set_weapon_kind(1);
                                 }
                             } break;
                             case 3:
                             {
+                            	if(tank[2].get_flag_exist()==true)
                                 if (tank[2].get_flag_weaponi(3)==true)
                                 {
                                     tank[2].set_flag_weaponi(3,false);
@@ -1596,7 +991,8 @@ void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game)
                         switch(tank[3].get_weapon_kind())
                         {
                             case 1:
-                            {
+                            {	
+                            	if(tank[3].get_flag_exist()==true)
                                 if(tank[3].get_bulletNum()>0)
                                 {
                                     shoot(tank,bullet,3);
@@ -1605,15 +1001,17 @@ void handle_move_event(Tank *tank,Bullet *bullet,int numbers_of_player_in_game)
                             } break;
                             case 2:
                             {
+                            	if(tank[3].get_flag_exist()==true)
                                 if (tank[3].get_flag_weaponi(2)==true)
                                 {
                                     tank[3].set_flag_weaponi(2,false);
-                                    shoot2(tank,numbers_of_player_in_game,0);
+                                    shoot2(tank,numbers_of_player_in_game,3,shield_flag);
                                     tank[3].set_weapon_kind(1);
                                 }
                             } break;
                             case 3:
                             {
+                            	if(tank[3].get_flag_exist()==true)
                                 if (tank[3].get_flag_weaponi(3)==true)
                                 {
                                     tank[3].set_flag_weaponi(3,false);
@@ -1679,7 +1077,11 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 	SDL_Surface* twoplayer=IMG_Load("twoplayer.png");
 	SDL_Surface* threeplayer=IMG_Load("threeplayer.png");
 	SDL_Surface* fourplayer=IMG_Load("fourplayer.png");
-	bool flag_show_playgame_and_setting=true;
+    SDL_Surface* mute=IMG_Load("mute.png");
+    SDL_Surface* unmute=IMG_Load("voice.png");
+
+	bool flag_show_playgame=true;
+    bool flag_show_setting=true;
 	int setting_xpos=600;
 	int setting_ypos=550;
 	SDL_Rect setting_offset;
@@ -1714,6 +1116,20 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 	SDL_Rect fourplayer_offset;
 	fourplayer_offset.x=fourplayer_xpos;
 	fourplayer_offset.y=fourplayer_ypos;
+
+    int mute_xpos=800;
+    int mute_ypos=200;
+    SDL_Rect mute_offset;
+    mute_offset.x=mute_xpos;
+    mute_offset.y=mute_ypos;
+
+    int unmute_xpos=800;
+    int unmute_ypos=500;
+    SDL_Rect unmute_offset;
+    unmute_offset.x=unmute_xpos;
+    unmute_offset.y=unmute_ypos;
+
+
 	bool quit=true;
 	int i=0;
 	while(quit==true)
@@ -1727,17 +1143,18 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 			}
 		mouse_xpos=event.motion.x;
 		mouse_ypos=event.motion.y;
+
 		if (mouse_xpos>playgame_xpos && mouse_xpos<playgame_xpos+playgame->w &&
-			mouse_ypos>playgame_ypos && mouse_ypos<playgame_ypos+playgame->h)
+			mouse_ypos>playgame_ypos && mouse_ypos<playgame_ypos+playgame->h && flag_show_setting==true)
 		{
-			flag_show_playgame_and_setting=false;
+			flag_show_playgame=false;
 		}
 		else if (mouse_xpos<playgame_xpos || mouse_xpos>playgame_xpos+playgame->w)
 		{
-			flag_show_playgame_and_setting=true;
+			flag_show_playgame=true;
 			i=0;
 		}
-		if (flag_show_playgame_and_setting==false)
+		if (flag_show_playgame==false && flag_show_setting==true)
 		{
 			for (; i<20 ; i++)
 			{
@@ -1769,7 +1186,6 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 						&& mouse_ypos>singleplayer_offset.y && mouse_ypos<singleplayer_offset.y + singleplayer->h)
 					{
 						numbers_of_player_in_game=1;
-						cout << "single\n";
 						return;
 					}
 
@@ -1777,7 +1193,6 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 						&& mouse_ypos>twoplayer_offset.y && mouse_ypos<twoplayer_offset.y + twoplayer->h)
 					{
 						numbers_of_player_in_game=2;
-						cout << "two\n";
 						return;
 					}
 
@@ -1785,7 +1200,6 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 						&& mouse_ypos>threeplayer_offset.y && mouse_ypos<threeplayer_offset.y + threeplayer->h)
 					{
 						numbers_of_player_in_game=3;
-						cout << "three\n";
 						return;
 					}
 
@@ -1793,13 +1207,53 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 						&& mouse_ypos>fourplayer_offset.y && mouse_ypos<fourplayer_offset.y + fourplayer->h)
 					{
 						numbers_of_player_in_game=4;
-						cout << "four\n";
 						return;
 					}
 				}
 			}
 		}
-		if (flag_show_playgame_and_setting==true)
+
+
+        if (mouse_xpos>setting_xpos && mouse_xpos<setting_xpos+setting->w &&
+            mouse_ypos>setting_ypos && mouse_ypos<setting_ypos+setting->h && flag_show_playgame==true)
+        {
+            flag_show_setting=false;
+        }
+        else if (mouse_xpos<setting_xpos || mouse_xpos>setting_xpos+setting->w)
+        {
+            flag_show_setting=true;
+        }
+
+        
+        if (flag_show_setting==false && flag_show_playgame==true)
+        {
+            SDL_BlitSurface(mute,NULL,SCREEN,&mute_offset);
+            SDL_BlitSurface(unmute,NULL,SCREEN,&unmute_offset);
+        }
+
+
+        if (flag_show_setting==false && flag_show_playgame==true)
+            if (SDL_PollEvent(&event))
+            {
+                if (event.type == SDL_MOUSEBUTTONDOWN)
+                {
+                    if (mouse_xpos>mute_offset.x && mouse_xpos<mute_offset.x+mute->w
+                        && mouse_ypos>mute_offset.y && mouse_ypos<mute_offset.y + mute->h)
+                    {
+                        sound_flag=false;
+			Mix_PauseMusic();
+                    }
+
+                    else if (mouse_xpos>unmute_offset.x && mouse_xpos<unmute_offset.x + unmute->w
+                        && mouse_ypos>unmute_offset.y && mouse_ypos<unmute_offset.y + unmute->h)
+                    {
+                        sound_flag=true;
+			Mix_ResumeMusic();
+                    }
+                }
+            }
+
+		if (flag_show_playgame==true && flag_show_setting==true)
 		{
 			SDL_BlitSurface(setting,NULL,SCREEN,&setting_offset);
 			SDL_BlitSurface(playgame,NULL,SCREEN,&playgame_offset);
@@ -1812,3 +1266,63 @@ void menu(SDL_Surface* SCREEN,int &numbers_of_player_in_game,SDL_Event &event)
 	return ;
 }
 
+void show_winner(SDL_Surface* SCREEN,SDL_Event &event,TTF_Font* font,int i,int winner_score)
+{
+    if (SDL_PollEvent(&event)){}
+    int mouse_xpos;
+    int mouse_ypos;
+
+    const char* tankAddress[4]={"tank1.png","tank2.png","tank3.png","tank4.png"};
+    SDL_Surface* winner_tank=IMG_Load(tankAddress[i]);
+    SDL_Surface* winner=IMG_Load("winner.png");
+    SDL_Surface* back=IMG_Load("back.png");
+    SDL_Rect winner_offset;
+    SDL_Rect winner_tank_offset;
+    SDL_Rect back_offset;
+
+    winner_offset.x=715;
+    winner_offset.y=360;
+
+    winner_tank_offset.x=1005;
+    winner_tank_offset.y=405;
+    
+    back_offset.x=0;
+    back_offset.y=0;
+
+    SDL_Color font_col={0,0,0};
+
+    while(true)
+    {
+
+        if (SDL_PollEvent(&event))
+        {
+            if (event.type==SDL_QUIT)
+            {
+                exit(0);
+            }
+        }
+
+        mouse_xpos=event.motion.x;
+    	mouse_ypos=event.motion.y;
+        SDL_FreeSurface(SCREEN);
+        boxRGBA(SCREEN,0,0,frame_width,frame_height,255,255,255,255); 
+        SDL_BlitSurface(winner,NULL,SCREEN,&winner_offset);
+        SDL_BlitSurface(winner_tank,NULL,SCREEN,&winner_tank_offset);
+        SDL_BlitSurface(back,NULL,SCREEN,&back_offset);
+        SDL_Surface *message =TTF_RenderText_Solid(font,NumToStr(winner_score),font_col);
+        apply_surface(857,483,message,SCREEN);
+
+        if (SDL_PollEvent(&event)){}
+                if (event.type == SDL_MOUSEBUTTONDOWN)
+                {
+                    if (mouse_xpos>back_offset.x && mouse_xpos<back_offset.x + back->w
+                        && mouse_ypos>back_offset.y && mouse_ypos<back_offset.y + back->h)
+                    {
+                        break;
+                    }
+                }
+        SDL_Flip(SCREEN);
+
+
+    } 
+}

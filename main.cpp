@@ -13,6 +13,7 @@
 using namespace std;
 #define PI 3.1415
 
+
 int main()
 {
 	srand((unsigned)time(NULL));
@@ -26,21 +27,28 @@ int main()
 	Menu=Mix_LoadMUS("Menu.mp3");
 	laser=Mix_LoadMUS("Laser.mp3");
 	TTF_Font *font = TTF_OpenFont("font.ttf",18); // defining & loading font
+	TTF_Font *font2 = TTF_OpenFont("font2.ttf",42); // defining & loading font
 	SDL_Color font_color={0,255,127};  // font color
+
+
 	int last_mouse_right_click_Xposition=0;
 	int last_mouse_right_click_Yposition=0;
 	int mouse_Xposition;
 	int mouse_Yposition;
 	int numbers_of_player_in_game=2;
 	int map_number_in_game;
-	map_number_in_game=randomMap(max_numbers_of_map,map_number_in_game);
 
-        cout<<SDL_NumJoysticks()<<endl;
-        stick1=SDL_JoystickOpen(0);
-        stick2=SDL_JoystickOpen(1);
-        cout<<SDL_JoystickOpened(0)<<endl<<SDL_JoystickOpened(1)<<endl;//<<SDL_JoystickOpened(2)<<endl;
+	bool shield_flag[4]={true,true,true,true};
+
+
+   cout<<SDL_NumJoysticks()<<endl;
+    stick1=SDL_JoystickOpen(0);
+    stick2=SDL_JoystickOpen(1);
+    cout<<SDL_JoystickOpened(0)<<endl<<SDL_JoystickOpened(1)<<endl;
 
 	SCREEN=SDL_SetVideoMode(frame_width,frame_height,32,SDL_SWSURFACE);
+	map_number_in_game=randomMap(max_numbers_of_map,map_number_in_game);
+
 	const char* tankAddress[4]={"tank1.png","tank2.png","tank3.png","tank4.png"};
 	const char* mapAddress[4]={"map1.png","map2.png","map3.png","map4.png"};
 	const char* tankBGAddress[4]={"tank1z.png","tank2z.png","tank3z.png","tank4z.png"};
@@ -49,20 +57,17 @@ int main()
     const char* chopper_shadowAddress[4]={"helesh1.png","helesh2.png","helesh3.png","helesh4.png"};
     const char* heartAddress={"heart.png"};
     const char* fireAddress[6]={"fire1.png","fire2.png","fire3.png","fire4.png","fire5.png","fire6.png"};
-    const char* power_upAddress[4]={"shoot.png","shoot2.png","shoot3.png","jon.png"};
-
+    const char* power_upAddress[5]={"shoot.png","shoot2.png","shoot3.png","jon.png","Shield.png"};
 
     int spark_number=0;
     int chopper_number=0;
-    heartScreen=IMG_Load(heartAddress);
+    shieldUG=IMG_Load("shield2.png");
+    shieldBG=IMG_Load("shieldBG.png");
 
-    for (int i=0 ; i<4 ; i++)
-  	{
-  		power_upScreen[i]=NULL;
-  		power_upScreen[i]=IMG_Load(power_upAddress[i]);
-  		if (!(power_upAddress[i]))
-  			printf("%s\n",IMG_GetError());
-  	}
+    rotatedShieldBG = rotozoomSurface(shieldBG,0,1.0,0);
+    rotatedShieldUG = rotozoomSurface(shieldUG,0,1.0,0);
+
+    heartScreen=IMG_Load(heartAddress);
 
 	for (int i=0 ; i<max_numbers_of_player; i++)
 	{
@@ -72,14 +77,31 @@ int main()
     	if (!(tankScreen[i]))
     			printf("%s\n",IMG_GetError());
 
+
         tankScreenBG[i]=NULL;
         tankScreenBG[i]=IMG_Load(tankBGAddress[i]);
         rotatedTankBG[i]=rotozoomSurface(tankScreenBG[i],/*angle*/0,/*zoom*/1.0,0);
         if(!(tankScreenBG[i]))
     			printf("%s\n",IMG_GetError());
-        if(!(rotatedChopper[i]))
+
+		sparkScreen[i]=IMG_Load(sparkAddress[i]);
+		if (!(sparkScreen[i]))
     			printf("%s\n",IMG_GetError());
+
+	    mapScreen[i]=IMG_Load(mapAddress[i]);
+	    if (!(mapScreen[i]))
+    			printf("%s\n",IMG_GetError());
+
 	}
+
+    for (int i=0 ; i<5 ; i++)
+  	{
+  		power_upScreen[i]=NULL;
+  		power_upScreen[i]=IMG_Load(power_upAddress[i]);
+  		if (!(power_upAddress[i]))
+  			printf("%s\n",IMG_GetError());
+  	}
+
 
     for(int i=0 ; i<4 ; i++)
 	{
@@ -100,23 +122,6 @@ int main()
     			printf("%s\n",IMG_GetError());
 	}
 
-	for (int i = 0; i < max_numbers_of_player; ++i)
-	{
-		sparkScreen[i]=IMG_Load(sparkAddress[i]);
-		if (!(sparkScreen[i]))
-    			printf("%s\n",IMG_GetError());
-	}
-
-
-
-
-	for (int i=0 ; i<max_numbers_of_map/*4*/; i++)
-	{
-	    mapScreen[i]=IMG_Load(mapAddress[i]);
-	    if (!(mapScreen[i]))
-    			printf("%s\n",IMG_GetError());
-	}
-
 	for (int i=0 ; i<6 ; i++)
 	{
 		fireScreen[i]=IMG_Load(fireAddress[i]);
@@ -126,16 +131,38 @@ int main()
 		}
 	}
 
+
+    if(sound_flag==true)
     Mix_PlayMusic(Menu,-1);
 
     Power_up *power_up=new Power_up[4];
     Bullet *bullet=new Bullet[41];
 	Tank *tank=new Tank[4];
 	Chopper chopper;
+
+
 	for (int i=0 ; i<numbers_of_player_in_game ; i++)
 	{
 		tank[i].set_score(0);
+		shield_flag[i]=false;
+		tank[i].set_flag_laser(false);
 	}
+        tank[0].set_R(46); // setting RGB colors for the background of tanks
+        tank[0].set_G(122);
+        tank[0].set_B(201);
+
+        tank[1].set_R(116);
+        tank[1].set_G(80);
+        tank[1].set_B(43);
+
+        tank[2].set_R(10);
+        tank[2].set_G(170);
+        tank[2].set_B(77);
+
+        tank[3].set_R(248);
+        tank[3].set_G(70);
+        tank[3].set_B(170);
+
 
 	SDL_Rect fire_offset;
     SDL_Rect chopper_offset;
@@ -146,33 +173,48 @@ int main()
 	SDL_Rect BG_offset;
 	SDL_Rect power_up_offset;
 
-	menu(SCREEN,numbers_of_player_in_game,event);
-	int power_up_number=0;
-	int rand_number=0;
-	int frame_number=0;
 
+	int power_up_number=0;
+	int frame_number=0;
     int startTime=SDL_GetTicks();
+	int winner_tank_number=0;
+	int max_score=0;
+
     bool flag_timer=true;
+
+	menu(SCREEN,numbers_of_player_in_game,event);
+
 	while(true)
 	{
         if(flag_timer==false)
         {
-            SDL_Delay(1000);
-            //neshan dadan barandeh
+            max_score=0;
+            flag_timer=true;
+            SDL_Delay(100);
+            for (int i=0 ; i<numbers_of_player_in_game ; i++)
+            {
+            	if (tank[i].get_score()>max_score)
+            	{
+            		winner_tank_number=i;
+            		max_score=tank[i].get_score();
+            	}
+            }
+			show_winner(SCREEN,event,font2,winner_tank_number,tank[winner_tank_number].get_score());
             menu(SCREEN,numbers_of_player_in_game,event);
-            rand_number=0;
             startTime=SDL_GetTicks();
+
             for (int i=0 ; i<numbers_of_player_in_game ; i++)
             {
                 tank[i].set_score(0);
+                shield_flag[i]=false;
+                tank[i].set_flag_laser(false);
             }
         }
-        rand_number++;
 
-	map_number_in_game=randomMap(max_numbers_of_map,map_number_in_game);
+		map_number_in_game=randomMap(max_numbers_of_map,map_number_in_game);
 
-
-	for (int i=0 ; i<4 ; i++)
+	// initial power up atributes
+	for (int i=0 ; i<5 ; i++)
 	{
 		power_up[i].set_Xposition(0);
 		power_up[i].set_Yposition(0);
@@ -181,10 +223,11 @@ int main()
 		power_up[i].set_flag_exist(false);
 		power_up[i].set_flag_show(false);
 	}
-
+	// initial tank atributes
 	for (int i=0 ; i<numbers_of_player_in_game ; i++)
 	{
-		tank[i].set_flag_UP(false);
+		tank[i].set_flag_shield(false);
+        tank[i].set_flag_UP(false);
 		tank[i].set_flag_DOWN(false);
 		tank[i].set_flag_exist(true);
 		tank[i].set_flag_laser(false);
@@ -204,29 +247,14 @@ int main()
 		tank[i].set_variable_for_shoot2(30);
 		tank[i].set_variable_for_shoot3(30);
 		tank[i].set_bulletNum(10);
-		//tank[i].set_score(0);
 		tank[i].set_critical_dots(SCREEN);
 		tank[i].set_flag_weaponi(1,true);
 		tank[i].set_flag_weaponi(2,false);
 		tank[i].set_flag_weaponi(3,false);
 		tank[i].set_variable_for_fire(22);
 	}
-        tank[0].set_R(46); // setting RGB colors for the background of tanks
-        tank[0].set_G(122);
-        tank[0].set_B(201);
 
-        tank[1].set_R(116);
-        tank[1].set_G(80);
-        tank[1].set_B(43);
-
-        tank[2].set_R(10);
-        tank[2].set_G(170);
-        tank[2].set_B(77);
-
-        tank[3].set_R(248);
-        tank[3].set_G(70);
-        tank[3].set_B(170);
-
+	//initial bullet atributes
 	for(int i=0 ; i<=40 ; i++)
 	{
         bullet[i].set_Xposition(0);
@@ -240,15 +268,15 @@ int main()
         bullet[i].set_existingTime(7000);
     }
 
-    //chopper.random_position();
-	chopper.set_Xposition(-200);
-	chopper.set_Yposition(-200);
-	chopper.set_Xposition_center(chopperScreen[0]->w/2);
-	chopper.set_Yposition_center(chopperScreen[0]->h/2);
-    chopper.set_angle(0);
-    chopper.set_speed(0);
-    chopper.set_Xspeed(0);
-    chopper.set_Yspeed(0);
+    	//initial chopper atributes
+		chopper.set_Xposition(-200);
+		chopper.set_Yposition(-200);
+		chopper.set_Xposition_center(chopperScreen[0]->w/2);
+		chopper.set_Yposition_center(chopperScreen[0]->h/2);
+    	chopper.set_angle(0);
+    	chopper.set_speed(0);
+    	chopper.set_Xspeed(0);
+    	chopper.set_Yspeed(0);
 
 
     boxRGBA(SCREEN,0,0,frame_width,frame_height,100,100,100,255);
@@ -261,7 +289,6 @@ int main()
     Mix_PauseMusic();
 
 	bool Continue=true;
-
 	while(Continue)
 	{
         int currentTime=SDL_GetTicks();
@@ -272,7 +299,7 @@ int main()
             flag_timer=false;
             leftTime=0;
         }
-        else leftTime=gameTime-passedTime;
+		else leftTime=gameTime-passedTime;
 
 
         int Min=leftTime/(60*1000);
@@ -282,12 +309,13 @@ int main()
 
 
             frame_number++;
-
-            if(frame_number%1000==900)
+            if(frame_number%800==700)
             {
-                Mix_PlayMusic(plane,0);
+                if(sound_flag==true)
+                    Mix_PlayMusic(plane,0);
             }
-       		if (frame_number%1000==0)
+
+       		if(frame_number%800==0)
        		{
 				power_up_number = make_power_up(power_up,frame_height,frame_width);
 				power_up[power_up_number].set_Xposition_center(power_up[power_up_number].get_Xposition()+power_upScreen[power_up_number]->w/2);
@@ -297,9 +325,14 @@ int main()
 				chopper.set_Yposition_center(chopper.get_Yposition()+rotatedChopper[0]->h/2);
 
        			if(chopper.get_Xposition()<power_up[power_up_number].get_Xposition())
+       			{
        				chopper.set_angle( (int)(180 / 3.1415 * atan( (float)(power_up[power_up_number].get_Yposition_center()-chopper.get_Yposition_center()) / (float)(chopper.get_Xposition_center()-power_up[power_up_number].get_Xposition_center() )) ));
+       			}
        			else
+       			{
        				chopper.set_angle( 180 + (int)(180.0 / 3.14159265 * atan( (float)(power_up[power_up_number].get_Yposition_center()-chopper.get_Yposition_center()) / (float)(chopper.get_Xposition_center()-power_up[power_up_number].get_Xposition_center() )) ));
+       			}
+
        			chopper.set_speed(10);
        			chopper.set_Xspeed(1);
        			chopper.set_Yspeed(1);
@@ -311,10 +344,10 @@ int main()
        		}
        		if (power_up[power_up_number].get_flag_exist()==true && power_up[power_up_number].get_flag_show()==true)
        		{
- 				check_if_power_up_is_gotten(power_up,tank,numbers_of_player_in_game ,power_up_number);
+ 				check_if_power_up_is_gotten(power_up,tank,numbers_of_player_in_game ,power_up_number,shield_flag);
        		}
 
-			if(frame_number==2000)	frame_number=0;
+			if(frame_number==2401) frame_number=0;
 
 
 			if (SDL_PollEvent(&event))
@@ -326,8 +359,8 @@ int main()
 				}
 				else
 				{
-                    handle_move_event(tank,bullet,numbers_of_player_in_game);
-                    handle_fire_event(tank,bullet,numbers_of_player_in_game);
+                    handle_move_event(tank,bullet,numbers_of_player_in_game,shield_flag);
+                    handle_fire_event(tank,bullet,numbers_of_player_in_game,shield_flag);
 				}
 			}
 
@@ -401,11 +434,13 @@ int main()
                 }
 			}
 
+
+            //checking laser shot
             for(int i=0 ; i<numbers_of_player_in_game ; i++)
             {
                 if(tank[i].get_flag_laser()==true)
                 {
-                    shoot3(SCREEN,tank,numbers_of_player_in_game,i);
+                    shoot3(SCREEN,tank,numbers_of_player_in_game,i,shield_flag);
                     tank[i].set_flag_laser(false);
                     tank[i].set_weapon_kind(1);
                 }
@@ -425,7 +460,7 @@ int main()
                     for(int j=0 ; j<40 ; j++)
                     {
                         if(bullet[j].get_flag_exist()==true)
-                            bullet[j].collision_with_tank(SCREEN,tank,i,explosion);
+                            bullet[j].collision_with_tank(SCREEN,tank,i,explosion,shield_flag);
                     }
             }
 
@@ -441,10 +476,14 @@ int main()
                     offset.y=tank[i].get_Yposition();
                     offset.x-=rotatedTank[i]->w/2-tankScreen[i]->w/2;
                     offset.y-=rotatedTank[i]->h/2-tankScreen[i]->h/2;
-                    //rotatedTank[i]=rotozoomSurface(tankScreen[i],tank[i].get_angle()-90,1.0,0);
                     SDL_BlitSurface(rotatedTank[i],NULL,SCREEN,&offset);
+                    if (shield_flag[i]==true && tank[i].get_flag_shield()==true)
+                    {
+                        rotatedShieldUG=rotozoomSurface(shieldUG,tank[i].get_angle()-90,1.0,0);
+                        SDL_BlitSurface(rotatedShieldUG,NULL,SCREEN,&offset);
+                    }
+
                     tank[i].set_critical_dots(SCREEN);
-                    //SDL_FreeSurface(rotatedTank[i]);
 
                     //showing tank information under the map
                     tankInfo_offset.x=225+i*450;
@@ -480,6 +519,7 @@ int main()
 				}
 			}
 
+			//create animation for shoot2
 			for (int i=0 ; i<numbers_of_player_in_game ; i++)
 			{
 				if (tank[i].get_variable_for_shoot2() < 20 )
@@ -497,11 +537,11 @@ int main()
 					SDL_BlitSurface(rotatedSpark[spark_number%4],NULL,SCREEN,&spark_offset);
 					tank[i].set_variable_for_shoot2(tank[i].get_variable_for_shoot2()+1);
 					if(tank[i].get_variable_for_shoot2() == 20 )
-                        tank[i].set_health(tank[i].get_health()-2);
+                        tank[i].set_health(tank[i].get_health()-5);
 				}
 			}
 
-			//creat animation for fire tank
+			//creat animation for tank fire
 			for (int i=0 ; i<numbers_of_player_in_game ; i++)
 			{
 				if (tank[i].get_variable_for_fire()<=20)
@@ -519,14 +559,12 @@ int main()
             // map is included to surface
 			SDL_BlitSurface(mapScreen[map_number_in_game],NULL,SCREEN,NULL);
 
+
 			if (power_up[power_up_number].get_flag_show()==true && power_up[power_up_number].get_flag_exist()==true)
        		{
-       			//cout << "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"<<endl;
-       			//cout << power_up_number<<endl;
        			power_up_offset.x=power_up[power_up_number].get_Xposition();
        			power_up_offset.y=power_up[power_up_number].get_Yposition();
        			SDL_BlitSurface(power_upScreen[power_up_number],NULL,SCREEN,&power_up_offset);
-       			//cout << "kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk"<<endl;
        		}
 
 			// check colision for tanks with walls
@@ -547,36 +585,33 @@ int main()
 
        		SDL_FreeSurface(rotatedShadow[frame_number%4]);
        		SDL_FreeSurface(rotatedChopper[frame_number%4]);
-
        		chopper_offset.x=chopper.get_Xposition();
        		chopper_offset.y=chopper.get_Yposition();
        		chopper_offset.y+=100;
-
        		rotatedShadow[frame_number%4]=rotozoomSurface(chopperShScreen[frame_number%4],chopper.get_angle()-90,1.5,0);
        		rotatedChopper[frame_number%4]=rotozoomSurface(chopperScreen[frame_number%4],chopper.get_angle()-90,2,0);
-
-
        		SDL_BlitSurface(rotatedShadow[frame_number%4],NULL,SCREEN,&chopper_offset);
        		chopper_offset.y=chopper.get_Yposition();
        		chopper_offset.x=chopper.get_Xposition();
-
        		SDL_BlitSurface(rotatedChopper[frame_number%4],NULL,SCREEN,&chopper_offset);
-
        		chopper.set_Xposition_center(chopper.get_Xposition()+rotatedChopper[0]->w/2);
 			chopper.set_Yposition_center(chopper.get_Yposition()+rotatedChopper[0]->h/2);
-       		//filledCircleRGBA(SCREEN,chopper.get_Xposition_center(),chopper.get_Yposition_center(),20,255,0,0,255);
 
-        int time=cl.tick();
-		SDL_Flip(SCREEN);
-		if(time<10)	SDL_Delay(10-time);
-		else 	SDL_Delay(10);
-		SDL_FreeSurface(SCREEN);
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////new code
-		if(frame_number%200==0)
-        {
-            Continue=check_game_end(tank,numbers_of_player_in_game);
-        }
+
+    	    int time=cl.tick();
+			SDL_Flip(SCREEN);
+			if(time<10)
+				SDL_Delay(10-time);
+			else
+				SDL_Delay(10);
+
+			SDL_FreeSurface(SCREEN);
+
+			if(frame_number%100==0)
+        	{
+            	Continue=check_game_end(tank,numbers_of_player_in_game);
+        	}
+		}
 	}
-	}
-return 0;
+	return 0;
 }
